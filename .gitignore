@@ -1,0 +1,26 @@
+# Node / Next.js (inside kemkvitto-app/)
+kemkvitto-app/node_modules/
+kemkvitto-app/.next/
+kemkvitto-app/out/
+kemkvitto-app/build/
+kemkvitto-app/.vercel
+kemkvitto-app/*.tsbuildinfo
+kemkvitto-app/next-env.d.ts
+
+# Environment & secrets
+.env
+.env.local
+.env*.local
+kemkvitto-app/.env*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Playwright MCP
+.playwright-mcp/
