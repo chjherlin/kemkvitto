@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useI18n } from "@/lib/i18n";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -26,7 +29,7 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Registrering misslyckades");
+      setError(data.error || t("auth.registerError"));
       setLoading(false);
       return;
     }
@@ -36,11 +39,14 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: "var(--bg)" }}>
+      <div className="absolute right-4 top-4">
+        <LanguageToggle />
+      </div>
       <div className="animate-fade-up w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4">
           <KemkvittoLogo size="lg" />
           <p style={{ color: "var(--text-muted)" }}>
-            Skapa ditt konto
+            {t("auth.registerSubtitle")}
           </p>
         </div>
 
@@ -52,7 +58,7 @@ export default function RegisterPage() {
           )}
           <input
             type="text"
-            placeholder="Företagsnamn"
+            placeholder={t("auth.businessName")}
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             required
@@ -61,7 +67,7 @@ export default function RegisterPage() {
           />
           <input
             type="email"
-            placeholder="E-post"
+            placeholder={t("auth.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -70,7 +76,7 @@ export default function RegisterPage() {
           />
           <input
             type="password"
-            placeholder="Lösenord (minst 6 tecken)"
+            placeholder={t("auth.passwordMinLength")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -84,14 +90,14 @@ export default function RegisterPage() {
             className="touch-target w-full rounded-xl bg-[#0891b2] px-4 py-4 text-lg font-bold text-white shadow-lg disabled:opacity-50"
             style={{ boxShadow: "0 4px 20px #0891b240" }}
           >
-            {loading ? "Registrerar..." : "Registrera"}
+            {loading ? t("auth.registering") : t("auth.register")}
           </button>
         </form>
 
         <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
-          Har redan konto?{" "}
+          {t("auth.hasAccount")}{" "}
           <Link href="/login" className="font-semibold" style={{ color: "#0891b2" }}>
-            Logga in
+            {t("auth.login")}
           </Link>
         </p>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useI18n } from "@/lib/i18n";
 
 const GARMENT_ROWS = [
   ["Rock", "Kostym", "Kavaj", "Byxor"],
@@ -12,7 +13,6 @@ const GARMENT_ROWS = [
 
 export interface GarmentEntry {
   qty: number;
-  bet: boolean;
 }
 
 interface GarmentGridProps {
@@ -20,7 +20,6 @@ interface GarmentGridProps {
   onChange: (garments: Record<string, GarmentEntry>) => void;
   priceList: Record<string, number>;
   brandColor: string;
-  defaultBet: boolean;
 }
 
 export default function GarmentGrid({
@@ -28,8 +27,8 @@ export default function GarmentGrid({
   onChange,
   priceList,
   brandColor,
-  defaultBet,
 }: GarmentGridProps) {
+  const { tGarment } = useI18n();
   const [lastTapped, setLastTapped] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
@@ -39,11 +38,11 @@ export default function GarmentGrid({
     if (next[name]) {
       next[name] = { ...next[name], qty: next[name].qty + 1 };
     } else {
-      next[name] = { qty: 1, bet: defaultBet };
+      next[name] = { qty: 1 };
     }
     onChange(next);
     setTimeout(() => setLastTapped(null), 150);
-  }, [garments, onChange, defaultBet]);
+  }, [garments, onChange]);
 
   const startLongPress = useCallback((name: string) => {
     const timer = setTimeout(() => {
@@ -99,7 +98,7 @@ export default function GarmentGrid({
                     ×{entry.qty}
                   </span>
                 )}
-                <span className="pos-tile-name">{name}</span>
+                <span className="pos-tile-name">{tGarment(name)}</span>
                 {price > 0 && (
                   <span className="pos-tile-price">{price} kr</span>
                 )}

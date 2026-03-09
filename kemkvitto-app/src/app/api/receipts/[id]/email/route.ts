@@ -30,8 +30,14 @@ export async function POST(
     );
   }
 
-  // Send email (console stub for now)
-  await sendReceiptEmail(receipt);
+  // Fetch washer info for branding and pricing
+  const { data: washer } = await supabase
+    .from("washers")
+    .select("business_name, brand_color, price_list")
+    .eq("id", receipt.washer_id)
+    .single();
+
+  await sendReceiptEmail(receipt, washer ?? undefined);
 
   return NextResponse.json({ ok: true });
 }

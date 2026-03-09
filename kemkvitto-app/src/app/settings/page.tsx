@@ -4,37 +4,45 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useI18n } from "@/lib/i18n";
 
 const BRAND_COLORS = [
-  "#0891b2", // cyan
-  "#7c3aed", // purple
-  "#059669", // emerald
-  "#dc2626", // red
-  "#ea580c", // orange
-  "#d946ef", // fuchsia
-  "#2563eb", // blue
-  "#0d9488", // teal
-  "#c026d3", // magenta
-  "#e11d48", // rose
-  "#4f46e5", // indigo
+  "#82C58A", // grön (green)
+  "#6BA6D2", // blå (blue)
+  "#EBA17D", // orange
+  "#3CB4A9", // blågrön (teal)
+  "#BA906C", // brun (brown)
+  "#ECE080", // gul (yellow)
+  "#ABA2DA", // lila (purple)
+  "#EFC6D2", // rosa (pink)
+  "#E5919D", // röd (red)
+  "#ACA6A2", // grå (grey)
 ];
 
 const ALL_GARMENTS = [
-  "Rock", "Kostym", "Kavaj", "Byxor", "Bet", "Kappa", "Dräkt", "Jacka",
-  "Kjol", "Ej Bet", "Poplin", "Matta", "Klänning", "Blus", "Skjorta",
+  "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka",
+  "Kjol", "Poplin", "Matta", "Klänning", "Blus", "Skjorta",
   "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
+];
+
+const ALL_SERVICES = [
+  "Pressning", "Stärkning", "Vikning", "Express",
 ];
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { t } = useI18n();
 
-  const [brandColor, setBrandColor] = useState("#0891b2");
+  const [brandColor, setBrandColor] = useState("#82C58A");
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const [businessName, setBusinessName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [resetNumber, setResetNumber] = useState<number | "">("");
+  const [resetDone, setResetDone] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -45,7 +53,7 @@ export default function SettingsPage() {
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data) => {
-        setBrandColor(data.brandColor || "#0891b2");
+        setBrandColor(data.brandColor || "#82C58A");
         setPriceList(data.priceList || {});
         setBusinessName(data.businessName || "");
         setLoading(false);
@@ -87,7 +95,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "var(--bg)" }}>
+    <div className="min-h-screen" style={{ background: `linear-gradient(135deg, ${brandColor}12 0%, ${brandColor}06 50%, var(--bg) 100%)`, minHeight: '100vh' }}>
       <header
         className="sticky top-0 z-20 border-b backdrop-blur-md"
         style={{
@@ -101,22 +109,25 @@ export default function SettingsPage() {
             className="text-sm font-medium"
             style={{ color: "var(--text-muted)" }}
           >
-            ← Tillbaka
+            {t("nav.back")}
           </Link>
           <h1
             className="text-lg font-bold"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
-            Inställningar
+            {t("settings.title")}
           </h1>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ backgroundColor: brandColor }}
-          >
-            {saved ? "Sparat!" : saving ? "Sparar..." : "Spara"}
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+              style={{ backgroundColor: brandColor }}
+            >
+              {saved ? t("settings.saved") : saving ? t("settings.saving") : t("settings.save")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -127,7 +138,7 @@ export default function SettingsPage() {
             className="mb-3 text-sm font-semibold uppercase tracking-wider"
             style={{ color: "var(--text-muted)" }}
           >
-            Företagsnamn
+            {t("settings.businessName")}
           </h2>
           <input
             type="text"
@@ -138,13 +149,56 @@ export default function SettingsPage() {
           />
         </section>
 
+        {/* Receipt number */}
+        <section>
+          <h2
+            className="mb-3 text-sm font-semibold uppercase tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {t("settings.receiptNumber")}
+          </h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={resetNumber}
+              onChange={(e) => {
+                if (!e.target.value) { setResetNumber(""); return; }
+                setResetNumber(Math.min(parseInt(e.target.value) || 1, 9999));
+              }}
+              placeholder={t("settings.receiptNumberPlaceholder")}
+              className="touch-target flex-1 rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium font-receipt"
+              style={{ borderColor: "var(--border)" }}
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                if (!resetNumber) return;
+                await fetch("/api/receipts/reset-number", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ nextNumber: resetNumber }),
+                });
+                setResetDone(true);
+                setTimeout(() => setResetDone(false), 2000);
+              }}
+              disabled={!resetNumber}
+              className="rounded-xl px-6 py-4 text-sm font-semibold text-white"
+              style={{ backgroundColor: resetNumber ? brandColor : "var(--border)" }}
+            >
+              {resetDone ? t("settings.receiptNumberReset") : t("settings.receiptNumberSet")}
+            </button>
+          </div>
+        </section>
+
         {/* Brand color */}
         <section>
           <h2
             className="mb-3 text-sm font-semibold uppercase tracking-wider"
             style={{ color: "var(--text-muted)" }}
           >
-            Kvittofärg
+            {t("settings.brandColor")}
           </h2>
           <div className="flex flex-wrap gap-3">
             {BRAND_COLORS.map((color) => (
@@ -172,7 +226,7 @@ export default function SettingsPage() {
             className="mb-3 text-sm font-semibold uppercase tracking-wider"
             style={{ color: "var(--text-muted)" }}
           >
-            Prislista (kr)
+            {t("settings.priceList")}
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ALL_GARMENTS.map((garment) => (
@@ -190,6 +244,38 @@ export default function SettingsPage() {
                   placeholder="—"
                   value={priceList[garment] || ""}
                   onChange={(e) => setPrice(garment, e.target.value)}
+                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
+                  style={{ borderColor: "var(--border)" }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Service prices */}
+        <section>
+          <h2
+            className="mb-3 text-sm font-semibold uppercase tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {t("settings.servicePrices")}
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {ALL_SERVICES.map((service) => (
+              <div
+                key={service}
+                className="flex items-center justify-between rounded-xl border-2 bg-white px-3 py-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                  {service}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={priceList[service] || ""}
+                  onChange={(e) => setPrice(service, e.target.value)}
                   className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
                   style={{ borderColor: "var(--border)" }}
                 />

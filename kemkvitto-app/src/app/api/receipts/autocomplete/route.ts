@@ -19,8 +19,8 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Search across name, phone, and email
-  const { data, error } = await supabase
+  // Try with customer_name/phone columns (migration 003)
+  let { data, error } = await supabase
     .from("receipts")
     .select("customer_name, customer_phone, customer_email")
     .eq("washer_id", washerId)
@@ -29,7 +29,31 @@ export async function GET(request: Request) {
     )
     .limit(50);
 
-  if (error) {
+  // Fallback to just customer_email if columns don't exist
+  if (error?.code === "PGRST204" || error?.code === "42703") {
+    const fallback = await supabase
+      .from("receipts")
+      .select("customer_email")
+      .eq("washer_id", washerId)
+      .ilike("customer_email", `%${q}%`)
+      .limit(50);
+
+    if (fallback.error || !fallback.data) {
+      return NextResponse.json({ customers: [] });
+    }
+
+    const seen = new Set<string>();
+    const customers: { name: string; phone: string; email: string }[] = [];
+    for (const r of fallback.data) {
+      if (!r.customer_email || seen.has(r.customer_email)) continue;
+      seen.add(r.customer_email);
+      customers.push({ name: "", phone: "", email: r.customer_email });
+      if (customers.length >= 5) break;
+    }
+    return NextResponse.json({ customers });
+  }
+
+  if (error || !data) {
     return NextResponse.json({ customers: [] });
   }
 

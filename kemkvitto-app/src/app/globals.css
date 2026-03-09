@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --brand: #0891b2;
+  --brand: #82C58A;
   --brand-light: color-mix(in srgb, var(--brand) 12%, white);
   --brand-medium: color-mix(in srgb, var(--brand) 25%, white);
   --brand-dark: color-mix(in srgb, var(--brand) 100%, black 20%);
@@ -33,7 +33,7 @@ body {
 
 /* Brand color theming */
 [data-brand] {
-  --brand: attr(data-brand type(<color>), #0891b2);
+  --brand: attr(data-brand type(<color>), #82C58A);
 }
 
 .font-receipt {
@@ -152,7 +152,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 /* Two-panel layout */
 .pos-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 2fr 1fr;
   gap: 0;
   height: calc(100vh - 52px - 72px); /* header + bottom bar */
   overflow: hidden;
@@ -318,6 +318,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   border-radius: 0.5rem;
   font-size: 0.875rem;
   background: var(--bg-card);
+  min-width: 0;
 }
 .pos-input:focus {
   border-color: var(--brand);

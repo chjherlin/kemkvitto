@@ -1,44 +1,50 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 const VAT_RATE = 0.25;
 
 export interface OrderItem {
   garment: string;
   qty: number;
-  bet: boolean;
   unitPrice: number;
+}
+
+export interface ServiceLine {
+  key: string;
+  label: string;
+  price: number;
 }
 
 interface OrderSummaryProps {
   items: OrderItem[];
-  betPrice: number;
   total: number;
   brandColor: string;
   onRemove: (garment: string) => void;
   onQtyChange: (garment: string, qty: number) => void;
-  onToggleTreatment: (garment: string) => void;
+  serviceLines?: ServiceLine[];
 }
 
 export default function OrderSummary({
   items,
-  betPrice,
   total,
   brandColor,
   onRemove,
   onQtyChange,
-  onToggleTreatment,
+  serviceLines,
 }: OrderSummaryProps) {
+  const { t, tGarment } = useI18n();
+
   if (items.length === 0) {
     return (
       <div className="pos-order-empty">
         <span style={{ color: "var(--text-light)", fontSize: "0.875rem" }}>
-          Tryck på plagg till vänster
+          {t("order.empty")}
         </span>
       </div>
     );
   }
 
-  const hasBet = items.some((i) => i.bet);
   const vatAmount = Math.round(total * VAT_RATE / (1 + VAT_RATE));
 
   return (
@@ -73,24 +79,10 @@ export default function OrderSummary({
                 </button>
               </div>
               <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                {item.garment}
+                {tGarment(item.garment)}
               </span>
             </div>
             <div className="pos-order-line-right">
-              <button
-                type="button"
-                onClick={() => onToggleTreatment(item.garment)}
-                className="pos-treatment-badge"
-                style={{
-                  backgroundColor: item.bet
-                    ? `color-mix(in srgb, ${brandColor} 15%, white)`
-                    : "var(--bg)",
-                  color: item.bet ? brandColor : "var(--text-light)",
-                  borderColor: item.bet ? `color-mix(in srgb, ${brandColor} 30%, white)` : "var(--border)",
-                }}
-              >
-                {item.bet ? "Bet" : "Ej Bet"}
-              </button>
               <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)", minWidth: "3.5rem", textAlign: "right" }}>
                 {lineTotal > 0 ? `${lineTotal} kr` : "—"}
               </span>
@@ -107,13 +99,19 @@ export default function OrderSummary({
         );
       })}
 
-      {/* Bet surcharge */}
-      {betPrice > 0 && hasBet && (
-        <div className="pos-order-line" style={{ borderTop: "1px dashed var(--border)", paddingTop: "0.5rem" }}>
-          <span className="text-xs" style={{ color: "var(--text-light)" }}>Bet-tillägg</span>
-          <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)" }}>
-            {betPrice} kr
-          </span>
+      {/* Service lines */}
+      {serviceLines && serviceLines.length > 0 && (
+        <div style={{ borderTop: "1px dashed var(--border)", paddingTop: "0.375rem" }}>
+          {serviceLines.map((svc) => (
+            <div key={svc.key} className="pos-order-line">
+              <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                {svc.label}
+              </span>
+              <span className="font-receipt text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                {svc.price > 0 ? `${svc.price} kr` : "—"}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -121,13 +119,13 @@ export default function OrderSummary({
       {total > 0 && (
         <div style={{ borderTop: "2px solid var(--border)", marginTop: "0.5rem", paddingTop: "0.625rem" }}>
           <div className="pos-order-line">
-            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>Summa</span>
+            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{t("order.total")}</span>
             <span className="font-receipt text-lg font-bold" style={{ color: brandColor }}>
               {total} kr
             </span>
           </div>
           <div className="pos-order-line" style={{ marginTop: "-0.25rem" }}>
-            <span className="text-xs" style={{ color: "var(--text-light)" }}>varav moms (25%)</span>
+            <span className="text-xs" style={{ color: "var(--text-light)" }}>{t("order.vat")}</span>
             <span className="font-receipt text-xs" style={{ color: "var(--text-light)" }}>
               {vatAmount} kr
             </span>

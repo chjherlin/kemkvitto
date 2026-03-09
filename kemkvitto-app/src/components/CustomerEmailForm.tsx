@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface CustomerEmailFormProps {
   receiptId: string;
@@ -13,6 +14,7 @@ export default function CustomerEmailForm({
   brandColor = "#0891b2",
   businessName,
 }: CustomerEmailFormProps) {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -79,10 +81,10 @@ export default function CustomerEmailForm({
             className="mb-2 text-3xl font-bold"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
-            Tack!
+            {t("email.thanks")}
           </h1>
           <p style={{ color: "var(--text-muted)" }} className="text-lg">
-            Kvittot skickas till din e-post
+            {t("email.sent")}
           </p>
         </div>
       </div>
@@ -115,10 +117,10 @@ export default function CustomerEmailForm({
               color: "var(--text)",
             }}
           >
-            Ange din e-post
+            {t("email.title")}
           </h1>
           <p className="mt-2 text-lg" style={{ color: "var(--text-muted)" }}>
-            Så skickar vi kvittot till dig
+            {t("email.subtitle")}
           </p>
         </div>
 
@@ -127,7 +129,7 @@ export default function CustomerEmailForm({
           <input
             ref={inputRef}
             type="email"
-            placeholder="din@epost.se"
+            placeholder={t("email.placeholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
@@ -169,7 +171,7 @@ export default function CustomerEmailForm({
             boxShadow: `0 4px 20px ${brandColor}40`,
           }}
         >
-          {submitting ? "Skickar..." : "Klar"}
+          {submitting ? t("email.submitting") : t("email.submit")}
         </button>
       </form>
     </div>

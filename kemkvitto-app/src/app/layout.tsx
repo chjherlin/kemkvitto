@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
+import { I18nProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "Kemkvitto",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body>
-        <SessionWrapper>{children}</SessionWrapper>
+        <I18nProvider>
+          <SessionWrapper>{children}</SessionWrapper>
+        </I18nProvider>
       </body>
     </html>
   );

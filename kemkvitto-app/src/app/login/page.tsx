@@ -5,9 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useI18n } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +28,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Fel e-post eller lösenord");
+      setError(t("auth.loginError"));
       setLoading(false);
     } else {
       router.push("/");
@@ -34,11 +37,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: "var(--bg)" }}>
+      <div className="absolute right-4 top-4">
+        <LanguageToggle />
+      </div>
       <div className="animate-fade-up w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4">
           <KemkvittoLogo size="lg" />
           <p style={{ color: "var(--text-muted)" }}>
-            Logga in på ditt konto
+            {t("auth.loginSubtitle")}
           </p>
         </div>
 
@@ -50,7 +56,7 @@ export default function LoginPage() {
           )}
           <input
             type="email"
-            placeholder="E-post"
+            placeholder={t("auth.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -59,7 +65,7 @@ export default function LoginPage() {
           />
           <input
             type="password"
-            placeholder="Lösenord"
+            placeholder={t("auth.passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -72,14 +78,14 @@ export default function LoginPage() {
             className="touch-target w-full rounded-xl bg-[#0891b2] px-4 py-4 text-lg font-bold text-white shadow-lg disabled:opacity-50"
             style={{ boxShadow: "0 4px 20px #0891b240" }}
           >
-            {loading ? "Loggar in..." : "Logga in"}
+            {loading ? t("auth.loggingIn") : t("auth.login")}
           </button>
         </form>
 
         <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
-          Inget konto?{" "}
+          {t("auth.noAccount")}{" "}
           <Link href="/register" className="font-semibold" style={{ color: "#0891b2" }}>
-            Registrera
+            {t("auth.register")}
           </Link>
         </p>
       </div>

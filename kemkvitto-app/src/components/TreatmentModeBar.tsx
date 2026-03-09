@@ -1,44 +1,46 @@
 "use client";
 
-interface TreatmentModeBarProps {
-  treatment: "bet" | "ej_bet";
-  onTreatmentChange: (t: "bet" | "ej_bet") => void;
-  betPrice: number;
+import { useI18n } from "@/lib/i18n";
+
+interface PaymentStatusBarProps {
+  paid: boolean;
+  onPaidChange: (paid: boolean) => void;
   brandColor: string;
 }
 
-export default function TreatmentModeBar({
-  treatment,
-  onTreatmentChange,
-  betPrice,
+export default function PaymentStatusBar({
+  paid,
+  onPaidChange,
   brandColor,
-}: TreatmentModeBarProps) {
+}: PaymentStatusBarProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex gap-2">
-      {(["bet", "ej_bet"] as const).map((t) => {
-        const active = treatment === t;
-        const label = t === "bet" ? "Bet" : "Ej Bet";
-        const sub = t === "bet" && betPrice > 0 ? `${betPrice} kr` : t === "ej_bet" ? "Ingen behandling" : "Fläckbehandling";
+      {([true, false] as const).map((isPaid) => {
+        const active = paid === isPaid;
+        const label = isPaid ? t("payment.betald") : t("payment.ejBetald");
+        const sub = isPaid ? t("payment.betaldSub") : t("payment.ejBetaldSub");
 
         return (
           <button
-            key={t}
+            key={String(isPaid)}
             type="button"
-            onClick={() => onTreatmentChange(t)}
+            onClick={() => onPaidChange(isPaid)}
             className="pos-treatment-pill"
             style={{
               flex: 1,
-              borderColor: active ? brandColor : "var(--border)",
+              borderColor: active ? (isPaid ? "#16a34a" : brandColor) : "var(--border)",
               backgroundColor: active
-                ? `color-mix(in srgb, ${brandColor} 12%, white)`
+                ? isPaid ? "color-mix(in srgb, #16a34a 12%, white)" : `color-mix(in srgb, ${brandColor} 12%, white)`
                 : "var(--bg-card)",
-              color: active ? brandColor : "var(--text)",
+              color: active ? (isPaid ? "#16a34a" : brandColor) : "var(--text)",
             }}
           >
             <span className="block text-base font-bold leading-tight">{label}</span>
             <span
               className="block text-xs"
-              style={{ color: active ? brandColor : "var(--text-light)", opacity: active ? 0.7 : 1 }}
+              style={{ color: active ? (isPaid ? "#16a34a" : brandColor) : "var(--text-light)", opacity: active ? 0.7 : 1 }}
             >
               {sub}
             </span>

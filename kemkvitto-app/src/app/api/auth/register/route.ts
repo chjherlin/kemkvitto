@@ -20,12 +20,10 @@ export async function POST(request: Request) {
     "Kostym": 350,
     "Kavaj": 200,
     "Byxor": 150,
-    "Bet": 30,
     "Kappa": 350,
     "Dräkt": 300,
     "Jacka": 250,
     "Kjol": 150,
-    "Ej Bet": 0,
     "Poplin": 100,
     "Matta": 400,
     "Klänning": 250,
@@ -36,6 +34,10 @@ export async function POST(request: Request) {
     "Jumper": 130,
     "Gardin": 200,
     "Vittvätt": 100,
+    "Pressning": 50,
+    "Stärkning": 30,
+    "Vikning": 20,
+    "Express": 100,
   };
 
   const { error } = await supabase.from("washers").insert({

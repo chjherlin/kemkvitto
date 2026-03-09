@@ -21,8 +21,20 @@ export async function GET() {
     return NextResponse.json({ message: "No reminders to send", count: 0 });
   }
 
+  // Cache washer info to avoid repeated lookups
+  const washerCache: Record<string, { business_name: string; brand_color: string; price_list: Record<string, number> }> = {};
+
   for (const receipt of receipts) {
-    await sendReminderEmail(receipt);
+    if (!washerCache[receipt.washer_id]) {
+      const { data: washer } = await supabase
+        .from("washers")
+        .select("business_name, brand_color, price_list")
+        .eq("id", receipt.washer_id)
+        .single();
+      if (washer) washerCache[receipt.washer_id] = washer;
+    }
+
+    await sendReminderEmail(receipt, washerCache[receipt.washer_id] ?? undefined);
 
     await supabase
       .from("receipts")

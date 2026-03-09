@@ -1,6 +1,13 @@
 "use client";
 
-const WEEKDAYS_SV = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
+import { useI18n } from "@/lib/i18n";
+
+const WEEKDAYS: Record<string, string[]> = {
+  sv: ["sön", "mån", "tis", "ons", "tors", "fre", "lör"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  da: ["søn", "man", "tir", "ons", "tor", "fre", "lør"],
+  no: ["søn", "man", "tir", "ons", "tor", "fre", "lør"],
+};
 
 function addBusinessDays(from: Date, days: number): Date {
   const result = new Date(from);
@@ -25,10 +32,24 @@ function parseDate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function weekdayName(dateStr: string): string {
+function weekdayName(dateStr: string, locale: string): string {
   if (!dateStr) return "";
   const d = parseDate(dateStr);
-  return WEEKDAYS_SV[d.getDay()];
+  return WEEKDAYS[locale][d.getDay()];
+}
+
+function countBusinessDays(from: string, to: string): number {
+  if (!from || !to) return 0;
+  const start = parseDate(from);
+  const end = parseDate(to);
+  let count = 0;
+  const current = new Date(start);
+  while (current < end) {
+    current.setDate(current.getDate() + 1);
+    const dow = current.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
 }
 
 interface DateStepperProps {
@@ -37,6 +58,7 @@ interface DateStepperProps {
   onChange: (val: string) => void;
   brandColor?: string;
   readOnly?: boolean;
+  fromDate?: string;
 }
 
 export function getDefaultDeliveryDate(): string {
@@ -49,7 +71,10 @@ export default function DateStepper({
   onChange,
   brandColor,
   readOnly,
+  fromDate,
 }: DateStepperProps) {
+  const { locale } = useI18n();
+
   function step(days: number) {
     if (!value) return;
     const d = parseDate(value);
@@ -85,9 +110,23 @@ export default function DateStepper({
             {value || "—"}
           </span>
           {value && (
-            <span className="text-xs font-medium" style={{ color: "var(--text-light)" }}>
-              ({weekdayName(value)})
-            </span>
+            <>
+              <span className="text-xs font-medium" style={{ color: "var(--text-light)" }}>
+                ({weekdayName(value, locale)})
+              </span>
+              {fromDate && (
+                <span
+                  className="rounded-full px-1.5 py-0.5 text-xs font-bold"
+                  style={{
+                    backgroundColor: brandColor ? `color-mix(in srgb, ${brandColor} 15%, white)` : "var(--bg)",
+                    color: brandColor || "var(--text-muted)",
+                    fontSize: "0.625rem",
+                  }}
+                >
+                  +{countBusinessDays(fromDate, value)}d
+                </span>
+              )}
+            </>
           )}
         </div>
         {!readOnly && (
