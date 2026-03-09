@@ -3,12 +3,12 @@
 import { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 
-const GARMENT_ROWS = [
-  ["Rock", "Kostym", "Kavaj", "Byxor"],
-  ["Kappa", "Dräkt", "Jacka", "Kjol"],
-  ["Poplin", "Matta", "Klänning", "Blus"],
-  ["Skjorta", "Mocka", "Slips", "Jumper"],
-  ["Gardin", "Vittvätt"],
+const ALL_GARMENTS = [
+  "Rock", "Kostym", "Kavaj", "Byxor",
+  "Kappa", "Dräkt", "Jacka", "Kjol",
+  "Poplin", "Matta", "Klänning", "Blus",
+  "Skjorta", "Mocka", "Slips", "Jumper",
+  "Gardin", "Vittvätt",
 ];
 
 export interface GarmentEntry {
@@ -62,51 +62,47 @@ export default function GarmentGrid({
   }, [longPressTimer]);
 
   return (
-    <div className="pos-garment-grid">
-      {GARMENT_ROWS.map((row, rowIdx) => (
-        <div key={rowIdx} className="pos-garment-row" style={{ gridTemplateColumns: `repeat(4, 1fr)` }}>
-          {row.map((name) => {
-            const entry = garments[name];
-            const active = !!entry;
-            const price = priceList[name] ?? 0;
-            const isAnimating = lastTapped === name;
+    <div className="pos-garment-grid-flat">
+      {ALL_GARMENTS.map((name) => {
+        const entry = garments[name];
+        const active = !!entry;
+        const price = priceList[name] ?? 0;
+        const isAnimating = lastTapped === name;
 
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => tap(name)}
-                onMouseDown={() => active && startLongPress(name)}
-                onMouseUp={cancelLongPress}
-                onMouseLeave={cancelLongPress}
-                onTouchStart={() => active && startLongPress(name)}
-                onTouchEnd={cancelLongPress}
-                className={`pos-garment-tile ${isAnimating ? "chip-select" : ""}`}
-                style={{
-                  backgroundColor: active
-                    ? `color-mix(in srgb, ${brandColor} 12%, white)`
-                    : "var(--bg-card)",
-                  borderColor: active ? brandColor : "var(--border)",
-                  color: active ? brandColor : "var(--text)",
-                }}
+        return (
+          <button
+            key={name}
+            type="button"
+            onClick={() => tap(name)}
+            onMouseDown={() => active && startLongPress(name)}
+            onMouseUp={cancelLongPress}
+            onMouseLeave={cancelLongPress}
+            onTouchStart={() => active && startLongPress(name)}
+            onTouchEnd={cancelLongPress}
+            className={`pos-garment-tile ${isAnimating ? "chip-select" : ""}`}
+            style={{
+              backgroundColor: active
+                ? `color-mix(in srgb, ${brandColor} 12%, white)`
+                : "var(--bg-card)",
+              borderColor: active ? brandColor : "var(--border)",
+              color: active ? brandColor : "var(--text)",
+            }}
+          >
+            {active && entry.qty > 0 && (
+              <span
+                className="pos-tile-badge"
+                style={{ backgroundColor: brandColor }}
               >
-                {active && entry.qty > 0 && (
-                  <span
-                    className="pos-tile-badge"
-                    style={{ backgroundColor: brandColor }}
-                  >
-                    ×{entry.qty}
-                  </span>
-                )}
-                <span className="pos-tile-name">{tGarment(name)}</span>
-                {price > 0 && (
-                  <span className="pos-tile-price">{price} kr</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      ))}
+                ×{entry.qty}
+              </span>
+            )}
+            <span className="pos-tile-name">{tGarment(name)}</span>
+            {price > 0 && (
+              <span className="pos-tile-price">{price} kr</span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

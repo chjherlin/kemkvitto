@@ -247,9 +247,8 @@ export default function NewReceiptPage() {
         <div className="pos-layout">
           {/* LEFT PANEL */}
           <div className="pos-left">
-            {/* Garment grid */}
-            <div style={{ flex: 1 }}>
-              <div className="pos-section-label">{t("receipt.garments")}</div>
+            {/* Garment grid — fills available space */}
+            <div style={{ minHeight: 0 }}>
               <GarmentGrid
                 garments={garments}
                 onChange={setGarments}
@@ -258,73 +257,59 @@ export default function NewReceiptPage() {
               />
             </div>
 
-            {/* Services */}
-            <div>
-              <div className="pos-section-label">{t("receipt.services")}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.375rem" }}>
-                {([
-                  { key: "pressning", priceKey: "Pressning" },
-                  { key: "starkning", priceKey: "Stärkning" },
-                  { key: "vikning", priceKey: "Vikning" },
-                  { key: "express", priceKey: "Express" },
-                ] as const).map((svc) => {
-                  const active = services.includes(svc.key);
-                  const price = priceList[svc.priceKey] ?? 0;
-                  return (
-                    <button
-                      key={svc.key}
-                      type="button"
-                      onClick={() => {
-                        if (active) setServices(services.filter((s) => s !== svc.key));
-                        else setServices([...services, svc.key]);
-                      }}
-                      className="pos-garment-tile"
-                      style={{
-                        borderColor: active ? brandColor : "var(--border)",
-                        backgroundColor: active
-                          ? `color-mix(in srgb, ${brandColor} 12%, white)`
-                          : "var(--bg-card)",
-                        color: active ? brandColor : "var(--text)",
-                        minHeight: "52px",
-                        padding: "0.5rem 0.25rem",
-                      }}
-                    >
-                      {active && (
-                        <span
-                          className="pos-tile-badge"
-                          style={{ backgroundColor: brandColor }}
-                        >
-                          ✓
-                        </span>
-                      )}
-                      <span className="pos-tile-name" style={{ fontSize: "0.75rem" }}>{t(`service.${svc.key}` as Parameters<typeof t>[0])}</span>
-                      {price > 0 && (
-                        <span className="pos-tile-price">{price} kr</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Services — compact horizontal strip */}
+            <div className="pos-services-strip">
+              {([
+                { key: "pressning", priceKey: "Pressning" },
+                { key: "starkning", priceKey: "Stärkning" },
+                { key: "vikning", priceKey: "Vikning" },
+                { key: "express", priceKey: "Express" },
+              ] as const).map((svc) => {
+                const active = services.includes(svc.key);
+                const price = priceList[svc.priceKey] ?? 0;
+                return (
+                  <button
+                    key={svc.key}
+                    type="button"
+                    onClick={() => {
+                      if (active) setServices(services.filter((s) => s !== svc.key));
+                      else setServices([...services, svc.key]);
+                    }}
+                    className="pos-service-chip"
+                    style={{
+                      borderColor: active ? brandColor : "var(--border)",
+                      backgroundColor: active
+                        ? `color-mix(in srgb, ${brandColor} 12%, white)`
+                        : "var(--bg-card)",
+                      color: active ? brandColor : "var(--text-muted)",
+                    }}
+                  >
+                    {active && <span className="pos-service-check">✓</span>}
+                    <span>{t(`service.${svc.key}` as Parameters<typeof t>[0])}</span>
+                    {price > 0 && (
+                      <span className="pos-service-price">{price} kr</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Dates */}
-            <div>
-              <div className="pos-section-label">{t("receipt.dates")}</div>
-              <div style={{ display: "flex", gap: "1.5rem" }}>
-                <DateStepper
-                  label={t("receipt.dropOff")}
-                  value={dropOffDate}
-                  onChange={setDropOffDate}
-                  readOnly
-                />
-                <DateStepper
-                  label={t("receipt.ready")}
-                  value={deliveryDate}
-                  onChange={setDeliveryDate}
-                  brandColor={brandColor}
-                  fromDate={dropOffDate}
-                />
-              </div>
+            {/* Dates — inline row */}
+            <div className="pos-dates-row">
+              <DateStepper
+                label={t("receipt.dropOff")}
+                value={dropOffDate}
+                onChange={setDropOffDate}
+                readOnly
+              />
+              <div style={{ width: 1, background: "var(--border)", alignSelf: "stretch", margin: "0 0.25rem" }} />
+              <DateStepper
+                label={t("receipt.ready")}
+                value={deliveryDate}
+                onChange={setDeliveryDate}
+                brandColor={brandColor}
+                fromDate={dropOffDate}
+              />
             </div>
           </div>
 
