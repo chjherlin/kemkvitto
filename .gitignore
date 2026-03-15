@@ -24,3 +24,22 @@ Thumbs.db
 
 # Playwright MCP
 .playwright-mcp/
+
+# Claude / LLM tooling
+CLAUDE.md
+.claude/
+.state/
+conversations/
+outputs/
+ref/
+log.md
+
+# WhatsApp / media dumps
+*.jpeg
+*.jpg
+*.png
+*.mp4
+*.mov
+
+# Project data
+data/
