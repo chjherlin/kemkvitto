@@ -189,11 +189,6 @@ export default function ReceiptsPage() {
                           >
                             #{r.receipt_number}
                           </span>
-                          {r.tag_number && (
-                            <span className="ml-2 rounded-md px-1.5 py-0.5 text-xs font-semibold" style={{ backgroundColor: "var(--bg)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                              {t("nav.tag")} {r.tag_number}
-                            </span>
-                          )}
                           {r.customer_name && (
                             <span className="ml-3 text-sm font-medium" style={{ color: "var(--text)" }}>
                               {r.customer_name}

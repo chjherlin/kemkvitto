@@ -83,7 +83,7 @@ function buildReceiptHTML(
         <!-- Header -->
         <tr><td style="background:${brandColor};padding:24px;text-align:center;">
           <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.5px;">${washer.business_name}</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Kvitto #${receipt.receipt_number}${receipt.tag_number ? ` — Märke ${receipt.tag_number}` : ""}</p>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Kvitto #${receipt.receipt_number}</p>
         </td></tr>
 
         <!-- Customer info -->

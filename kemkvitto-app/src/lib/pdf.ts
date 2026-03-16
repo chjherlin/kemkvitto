@@ -53,7 +53,7 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
   // --- Receipt number ---
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Kvitto #${data.receiptNumber}${data.tagNumber ? ` — Märke ${data.tagNumber}` : ""}`, pageWidth / 2, y, { align: "center" });
+  doc.text(`Kvitto #${data.receiptNumber}`, pageWidth / 2, y, { align: "center" });
   y += 6;
 
   // --- Divider ---
@@ -224,7 +224,7 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
 
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Kvitto #${data.receiptNumber}${data.tagNumber ? ` — Märke ${data.tagNumber}` : ""}`, pageWidth / 2, y, { align: "center" });
+  doc.text(`Kvitto #${data.receiptNumber}`, pageWidth / 2, y, { align: "center" });
   y += 6;
 
   doc.setDrawColor(200, 200, 200);

@@ -25,7 +25,7 @@ export default function NewReceiptPage() {
   const [receiptNumber, setReceiptNumber] = useState(1);
   const [specialMode, setSpecialMode] = useState(false);
   const [specialNumber, setSpecialNumber] = useState<number | "">("");
-  const [tagNumber, setTagNumber] = useState("");
+
   const [garments, setGarments] = useState<Record<string, GarmentEntry>>({});
   const [services, setServices] = useState<string[]>(["pressning"]);
   const [dropOffDate, setDropOffDate] = useState(todayISO());
@@ -36,7 +36,7 @@ export default function NewReceiptPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [successInfo, setSuccessInfo] = useState<{ receiptNum: number; tagNum: string; emailSent: boolean; customerName: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ receiptNum: number; emailSent: boolean; customerName: string } | null>(null);
   const [brandColor, setBrandColor] = useState("#82C58A");
   const [priceList, setPriceList] = useState<Record<string, number>>({});
 
@@ -102,7 +102,7 @@ export default function NewReceiptPage() {
           receiptNumber: effectiveReceiptNumber,
           // Special receipts don't advance the regular counter
           nextReceiptNumber: specialMode ? receiptNumber : receiptNumber + 1,
-          tagNumber: tagNumber || null,
+          tagNumber: null,
           garments,
           deliveryDate,
           dropOffDate,
@@ -124,7 +124,7 @@ export default function NewReceiptPage() {
 
       const { emailSent, nextReceiptNumber } = await res.json();
       if (!specialMode && nextReceiptNumber) setReceiptNumber(nextReceiptNumber);
-      setSuccessInfo({ receiptNum: effectiveReceiptNumber, tagNum: tagNumber, emailSent, customerName });
+      setSuccessInfo({ receiptNum: effectiveReceiptNumber, emailSent, customerName });
     } catch (err) {
       setSubmitError(`Nätverksfel: ${err instanceof Error ? err.message : "okänt"}`);
       setSubmitting(false);
@@ -143,7 +143,6 @@ export default function NewReceiptPage() {
   }
 
   function resetForm() {
-    setTagNumber("");
     setGarments({});
     setServices(["pressning"]);
     setDropOffDate(todayISO());
@@ -183,7 +182,6 @@ export default function NewReceiptPage() {
           </h1>
           <p className="mb-1 text-lg" style={{ color: "var(--text-muted)" }}>
             #{successInfo.receiptNum}
-            {successInfo.tagNum && ` · ${t("nav.tag")} ${successInfo.tagNum}`}
             {successInfo.customerName && ` — ${successInfo.customerName}`}
           </p>
           <p className="mb-8 text-base" style={{ color: successInfo.emailSent ? brandColor : "var(--text-light)" }}>
@@ -212,18 +210,6 @@ export default function NewReceiptPage() {
           <span style={{ color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 600 }}>
             {session.user?.name}
           </span>
-          <div className="pos-header-receipt" style={{ marginLeft: "0.5rem" }}>
-            <span style={{ color: "var(--text-light)", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {t("nav.tag")}
-            </span>
-            <input
-              type="text"
-              value={tagNumber}
-              onChange={(e) => setTagNumber(e.target.value)}
-              placeholder="—"
-              style={{ color: brandColor, width: "4rem" }}
-            />
-          </div>
         </div>
         <div className="pos-header-nav">
           <LanguageToggle />
