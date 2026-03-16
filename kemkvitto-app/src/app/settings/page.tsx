@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 await fetch("/api/receipts/reset-number", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ nextNumber: resetNumber }),
+                  body: JSON.stringify({ nextReceiptNumber: resetNumber }),
                 });
                 setResetDone(true);
                 setTimeout(() => setResetDone(false), 2000);
