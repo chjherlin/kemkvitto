@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const washerId = (session.user as { id: string }).id;
   const {
-    receiptNumber, tagNumber, garments, deliveryDate, dropOffDate,
+    receiptNumber, nextReceiptNumber, tagNumber, garments, deliveryDate, dropOffDate,
     comment, customerName, customerPhone, customerEmail, amountTotal,
     paid, services,
   } = await request.json();
@@ -74,10 +74,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // Update next_receipt_number to be one more than the used number
+  // Update next_receipt_number — client sends the correct next value
+  // (for special receipts the regular counter is preserved, not incremented past the special number)
+  const storedNext = nextReceiptNumber ?? receiptNumber + 1;
   await supabase
     .from("washers")
-    .update({ next_receipt_number: receiptNumber + 1 })
+    .update({ next_receipt_number: storedNext })
     .eq("id", washerId);
 
   // Upsert customer record if name provided
@@ -128,5 +130,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ id: data!.id, emailSent }, { status: 201 });
+  return NextResponse.json({ id: data!.id, emailSent, nextReceiptNumber: storedNext }, { status: 201 });
 }

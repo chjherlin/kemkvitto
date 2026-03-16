@@ -23,6 +23,8 @@ export default function NewReceiptPage() {
   const { t } = useI18n();
 
   const [receiptNumber, setReceiptNumber] = useState(1);
+  const [specialMode, setSpecialMode] = useState(false);
+  const [specialNumber, setSpecialNumber] = useState<number | "">("");
   const [tagNumber, setTagNumber] = useState("");
   const [garments, setGarments] = useState<Record<string, GarmentEntry>>({});
   const [services, setServices] = useState<string[]>(["pressning"]);
@@ -85,6 +87,8 @@ export default function NewReceiptPage() {
     setGarments((prev) => ({ ...prev, [garment]: { ...prev[garment], qty } }));
   }, [handleRemove]);
 
+  const effectiveReceiptNumber = specialMode && specialNumber !== "" ? Number(specialNumber) : receiptNumber;
+
   async function handleSubmit() {
     if (Object.keys(garments).length === 0 || !deliveryDate) return;
     setSubmitting(true);
@@ -95,7 +99,9 @@ export default function NewReceiptPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          receiptNumber,
+          receiptNumber: effectiveReceiptNumber,
+          // Special receipts don't advance the regular counter
+          nextReceiptNumber: specialMode ? receiptNumber : receiptNumber + 1,
           tagNumber: tagNumber || null,
           garments,
           deliveryDate,
@@ -116,8 +122,9 @@ export default function NewReceiptPage() {
         return;
       }
 
-      const { emailSent } = await res.json();
-      setSuccessInfo({ receiptNum: receiptNumber, tagNum: tagNumber, emailSent, customerName });
+      const { emailSent, nextReceiptNumber } = await res.json();
+      if (!specialMode && nextReceiptNumber) setReceiptNumber(nextReceiptNumber);
+      setSuccessInfo({ receiptNum: effectiveReceiptNumber, tagNum: tagNumber, emailSent, customerName });
     } catch (err) {
       setSubmitError(`Nätverksfel: ${err instanceof Error ? err.message : "okänt"}`);
       setSubmitting(false);
@@ -148,7 +155,8 @@ export default function NewReceiptPage() {
     setSubmitting(false);
     setSubmitError("");
     setSuccessInfo(null);
-    setReceiptNumber((prev) => prev + 1);
+    setSpecialMode(false);
+    setSpecialNumber("");
   }
 
   if (!session) return null;
@@ -204,23 +212,6 @@ export default function NewReceiptPage() {
           <span style={{ color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 600 }}>
             {session.user?.name}
           </span>
-          <div className="pos-header-receipt" style={{ marginLeft: "0.75rem" }}>
-            <span style={{ color: "var(--text-light)", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {t("nav.receipt")}
-            </span>
-            <span style={{ color: "var(--border-strong)" }}>#</span>
-            <input
-              type="number"
-              min={1}
-              max={99999}
-              value={receiptNumber}
-              onChange={(e) => {
-                const v = parseInt(e.target.value) || 1;
-                setReceiptNumber(Math.min(v, 99999));
-              }}
-              style={{ color: brandColor }}
-            />
-          </div>
           <div className="pos-header-receipt" style={{ marginLeft: "0.5rem" }}>
             <span style={{ color: "var(--text-light)", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
               {t("nav.tag")}
@@ -315,6 +306,71 @@ export default function NewReceiptPage() {
 
           {/* RIGHT PANEL */}
           <div className="pos-right">
+            {/* Receipt number */}
+            <div>
+              <div className="pos-section-label">{t("nav.receipt")} nr</div>
+              <div className="pos-counter-row">
+                <button
+                  type="button"
+                  className="pos-counter-btn"
+                  onClick={() => setReceiptNumber((p) => Math.max(1, p - 1))}
+                  title="Minska"
+                >−</button>
+                <input
+                  type="number"
+                  min={1}
+                  max={99999}
+                  value={receiptNumber}
+                  onChange={(e) => setReceiptNumber(Math.min(99999, parseInt(e.target.value) || 1))}
+                  className="pos-counter-input"
+                  style={{ color: specialMode ? "var(--text-light)" : brandColor, textDecoration: specialMode ? "line-through" : "none", opacity: specialMode ? 0.4 : 1 }}
+                />
+                <button
+                  type="button"
+                  className="pos-counter-btn"
+                  onClick={() => setReceiptNumber((p) => Math.min(99999, p + 1))}
+                  title="Öka"
+                >+</button>
+                <button
+                  type="button"
+                  className="pos-counter-reset"
+                  onClick={() => {
+                    fetch("/api/receipts/next-number").then(r => r.json()).then(d => {
+                      if (d.nextReceiptNumber) setReceiptNumber(d.nextReceiptNumber);
+                    });
+                  }}
+                  title="Hämta från databas"
+                >↺</button>
+                <button
+                  type="button"
+                  className="pos-counter-special-btn"
+                  style={{
+                    borderColor: specialMode ? brandColor : "var(--border)",
+                    backgroundColor: specialMode ? `color-mix(in srgb, ${brandColor} 12%, white)` : "transparent",
+                    color: specialMode ? brandColor : "var(--text-muted)",
+                  }}
+                  onClick={() => { setSpecialMode((p) => !p); setSpecialNumber(""); }}
+                >Specialnr</button>
+              </div>
+              {specialMode && (
+                <div className="pos-special-row">
+                  <span style={{ color: "var(--text-light)", fontSize: "0.75rem" }}>#</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={999999}
+                    value={specialNumber}
+                    onChange={(e) => setSpecialNumber(parseInt(e.target.value) || "")}
+                    className="pos-counter-input"
+                    style={{ color: brandColor, flex: 1 }}
+                    placeholder="Ange specialnummer..."
+                    autoFocus
+                  />
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-light)", whiteSpace: "nowrap" }}>→ återgår till #{receiptNumber}</span>
+                </div>
+              )}
+            </div>
+
             {/* Customer */}
             <div>
               <div className="pos-section-label">{t("receipt.customer")}</div>

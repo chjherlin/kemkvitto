@@ -186,6 +186,95 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   margin-bottom: 0.375rem;
 }
 
+/* Counter row in right panel */
+.pos-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pos-counter-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pos-counter-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.pos-counter-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  width: 5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  padding: 0.25rem 0.375rem;
+  outline: none;
+}
+.pos-counter-input:focus {
+  border-color: var(--border-strong);
+}
+
+.pos-counter-reset {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 1rem;
+  color: var(--text-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pos-counter-reset:hover {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+
+.pos-counter-special-btn {
+  margin-left: auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.pos-counter-special-btn:hover {
+  border-color: var(--border-strong);
+}
+
+.pos-special-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+}
+
 /* Treatment pills */
 .pos-treatment-pill {
   border: 2px solid var(--border);
