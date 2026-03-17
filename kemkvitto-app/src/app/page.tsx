@@ -39,6 +39,9 @@ export default function NewReceiptPage() {
   const [successInfo, setSuccessInfo] = useState<{ receiptNum: number; emailSent: boolean; customerName: string } | null>(null);
   const [brandColor, setBrandColor] = useState("#82C58A");
   const [priceList, setPriceList] = useState<Record<string, number>>({});
+  const [garmentList, setGarmentList] = useState<string[]>([]);
+  const [serviceList, setServiceList] = useState<string[]>([]);
+  const [showReceiptHelp, setShowReceiptHelp] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -52,9 +55,18 @@ export default function NewReceiptPage() {
           setReceiptNumber(data.nextReceiptNumber);
           if (data.brandColor) setBrandColor(data.brandColor);
           if (data.priceList) setPriceList(data.priceList);
+          if (data.garmentList) setGarmentList(data.garmentList);
+          if (data.serviceList) setServiceList(data.serviceList);
         });
     }
   }, [status]);
+
+  useEffect(() => {
+    if (!showReceiptHelp) return;
+    function handler() { setShowReceiptHelp(false); }
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showReceiptHelp]);
 
   // Order items derived from garments
   const orderItems: OrderItem[] = Object.entries(garments).map(([name, entry]) => ({
@@ -231,6 +243,7 @@ export default function NewReceiptPage() {
                 onChange={setGarments}
                 priceList={priceList}
                 brandColor={brandColor}
+                garmentList={garmentList}
               />
             </div>
 
@@ -320,13 +333,15 @@ export default function NewReceiptPage() {
                 <button
                   type="button"
                   className="pos-counter-reset"
-                  onClick={() => {
-                    fetch("/api/receipts/next-number").then(r => r.json()).then(d => {
-                      if (d.nextReceiptNumber) setReceiptNumber(d.nextReceiptNumber);
+                  onClick={async () => {
+                    await fetch("/api/receipts/reset-number", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
                     });
                   }}
-                  title="Hämta från databas"
-                >↺</button>
+                  title="Återställ sekvensen från detta nummer"
+                >Återställ</button>
                 <button
                   type="button"
                   className="pos-counter-special-btn"
@@ -336,7 +351,54 @@ export default function NewReceiptPage() {
                     color: specialMode ? brandColor : "var(--text-muted)",
                   }}
                   onClick={() => { setSpecialMode((p) => !p); setSpecialNumber(""); }}
-                >Specialnr</button>
+                >Engångsnummer</button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="pos-counter-help"
+                    onClick={(e) => { e.stopPropagation(); setShowReceiptHelp((p) => !p); }}
+                    title="Hjälp"
+                    style={{
+                      width: "1.5rem",
+                      height: "1.5rem",
+                      borderRadius: "50%",
+                      border: "1.5px solid var(--border)",
+                      background: "var(--bg-card)",
+                      color: "var(--text-muted)",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >?</button>
+                  {showReceiptHelp && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: "calc(100% + 6px)",
+                        zIndex: 100,
+                        width: "16rem",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "0.75rem",
+                        padding: "0.75rem",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Numret räknas upp automatiskt vid varje kvitto.
+                      <br /><br />
+                      <strong>Engångsnummer</strong> — använd ett specialnummer för ett enskilt kvitto utan att påverka sekvensen.
+                      <br /><br />
+                      <strong>Återställ</strong> — sätt nästa nummer i sekvensen till det värde som visas nu.
+                    </div>
+                  )}
+                </div>
               </div>
               {specialMode && (
                 <div className="pos-special-row">
