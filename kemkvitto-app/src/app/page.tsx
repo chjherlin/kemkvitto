@@ -307,70 +307,28 @@ export default function NewReceiptPage() {
           <div className="pos-right">
             {/* Receipt number */}
             <div>
-              <div className="pos-section-label">{t("nav.receipt")} nr</div>
-              <div className="pos-counter-row">
-                <button
-                  type="button"
-                  className="pos-counter-btn"
-                  onClick={() => setReceiptNumber((p) => Math.max(1, p - 1))}
-                  title="Minska"
-                >−</button>
-                <input
-                  type="number"
-                  min={1}
-                  max={99999}
-                  value={receiptNumber}
-                  onChange={(e) => setReceiptNumber(Math.min(99999, parseInt(e.target.value) || 1))}
-                  className="pos-counter-input"
-                  style={{ color: specialMode ? "var(--text-light)" : brandColor, textDecoration: specialMode ? "line-through" : "none", opacity: specialMode ? 0.4 : 1 }}
-                />
-                <button
-                  type="button"
-                  className="pos-counter-btn"
-                  onClick={() => setReceiptNumber((p) => Math.min(99999, p + 1))}
-                  title="Öka"
-                >+</button>
-                <button
-                  type="button"
-                  className="pos-counter-reset"
-                  onClick={async () => {
-                    await fetch("/api/receipts/reset-number", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
-                    });
-                  }}
-                  title="Återställ sekvensen från detta nummer"
-                >Återställ</button>
-                <button
-                  type="button"
-                  className="pos-counter-special-btn"
-                  style={{
-                    borderColor: specialMode ? brandColor : "var(--border)",
-                    backgroundColor: specialMode ? `color-mix(in srgb, ${brandColor} 12%, white)` : "transparent",
-                    color: specialMode ? brandColor : "var(--text-muted)",
-                  }}
-                  onClick={() => { setSpecialMode((p) => !p); setSpecialNumber(""); }}
-                >Engångsnummer</button>
+              {/* Section label + ? help inline */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "0.375rem" }}>
+                <div className="pos-section-label" style={{ margin: 0 }}>{t("nav.receipt")} nr</div>
                 <div className="relative">
                   <button
                     type="button"
-                    className="pos-counter-help"
                     onClick={(e) => { e.stopPropagation(); setShowReceiptHelp((p) => !p); }}
                     title="Hjälp"
                     style={{
-                      width: "1.5rem",
-                      height: "1.5rem",
+                      width: "1.25rem",
+                      height: "1.25rem",
                       borderRadius: "50%",
                       border: "1.5px solid var(--border)",
                       background: "var(--bg-card)",
                       color: "var(--text-muted)",
-                      fontSize: "0.75rem",
+                      fontSize: "0.7rem",
                       fontWeight: 700,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >?</button>
                   {showReceiptHelp && (
@@ -399,6 +357,55 @@ export default function NewReceiptPage() {
                     </div>
                   )}
                 </div>
+              </div>
+              {/* Row 1: stepper */}
+              <div className="pos-counter-row">
+                <button
+                  type="button"
+                  className="pos-counter-btn"
+                  onClick={() => setReceiptNumber((p) => Math.max(1, p - 1))}
+                  title="Minska"
+                >−</button>
+                <input
+                  type="number"
+                  min={1}
+                  max={99999}
+                  value={receiptNumber}
+                  onChange={(e) => setReceiptNumber(Math.min(99999, parseInt(e.target.value) || 1))}
+                  className="pos-counter-input"
+                  style={{ color: specialMode ? "var(--text-light)" : brandColor, textDecoration: specialMode ? "line-through" : "none", opacity: specialMode ? 0.4 : 1 }}
+                />
+                <button
+                  type="button"
+                  className="pos-counter-btn"
+                  onClick={() => setReceiptNumber((p) => Math.min(99999, p + 1))}
+                  title="Öka"
+                >+</button>
+              </div>
+              {/* Row 2: action buttons */}
+              <div style={{ display: "flex", gap: "0.375rem", marginTop: "0.375rem" }}>
+                <button
+                  type="button"
+                  className="pos-counter-reset"
+                  onClick={async () => {
+                    await fetch("/api/receipts/reset-number", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
+                    });
+                  }}
+                  title="Återställ sekvensen från detta nummer"
+                >Återställ</button>
+                <button
+                  type="button"
+                  className="pos-counter-special-btn"
+                  style={{
+                    borderColor: specialMode ? brandColor : "var(--border)",
+                    backgroundColor: specialMode ? `color-mix(in srgb, ${brandColor} 12%, white)` : "transparent",
+                    color: specialMode ? brandColor : "var(--text-muted)",
+                  }}
+                  onClick={() => { setSpecialMode((p) => !p); setSpecialNumber(""); }}
+                >Engångsnummer</button>
               </div>
               {specialMode && (
                 <div className="pos-special-row">

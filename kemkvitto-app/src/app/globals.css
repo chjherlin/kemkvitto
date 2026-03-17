@@ -231,18 +231,16 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 }
 
 .pos-counter-reset {
-  width: 2rem;
-  height: 2rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   background: transparent;
-  font-size: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-light);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  white-space: nowrap;
+  transition: all 0.15s;
 }
 .pos-counter-reset:hover {
   color: var(--text-muted);
