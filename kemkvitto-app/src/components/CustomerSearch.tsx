@@ -138,23 +138,15 @@ export default function CustomerSearch({
         )}
       </div>
 
-      {/* Phone + Email — always visible */}
+      {/* Email */}
       <div className="pos-customer-inputs">
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => onPhoneChange(e.target.value)}
-          placeholder={t("customer.phone")}
-          className="pos-input"
-          style={{ flex: 1 }}
-        />
         <input
           type="email"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
           placeholder={t("customer.email")}
           className="pos-input"
-          style={{ flex: 1 }}
+          style={{ width: "100%" }}
         />
       </div>
     </div>
