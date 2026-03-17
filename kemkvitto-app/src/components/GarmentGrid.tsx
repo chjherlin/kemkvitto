@@ -3,14 +3,6 @@
 import { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 
-const ALL_GARMENTS = [
-  "Rock", "Kostym", "Kavaj", "Byxor",
-  "Kappa", "Dräkt", "Jacka", "Kjol",
-  "Poplin", "Matta", "Klänning", "Blus",
-  "Skjorta", "Mocka", "Slips", "Jumper",
-  "Gardin", "Vittvätt",
-];
-
 export interface GarmentEntry {
   qty: number;
 }
@@ -20,6 +12,7 @@ interface GarmentGridProps {
   onChange: (garments: Record<string, GarmentEntry>) => void;
   priceList: Record<string, number>;
   brandColor: string;
+  garmentList: string[];  // replaces hardcoded ALL_GARMENTS
 }
 
 export default function GarmentGrid({
@@ -27,6 +20,7 @@ export default function GarmentGrid({
   onChange,
   priceList,
   brandColor,
+  garmentList,
 }: GarmentGridProps) {
   const { tGarment } = useI18n();
   const [lastTapped, setLastTapped] = useState<string | null>(null);
@@ -63,7 +57,7 @@ export default function GarmentGrid({
 
   return (
     <div className="pos-garment-grid-flat">
-      {ALL_GARMENTS.map((name) => {
+      {garmentList.map((name) => {
         const entry = garments[name];
         const active = !!entry;
         const price = priceList[name] ?? 0;
