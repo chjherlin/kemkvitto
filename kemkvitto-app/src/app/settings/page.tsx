@@ -20,16 +20,6 @@ const BRAND_COLORS = [
   "#ACA6A2", // grå (grey)
 ];
 
-const ALL_GARMENTS = [
-  "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka",
-  "Kjol", "Poplin", "Matta", "Klänning", "Blus", "Skjorta",
-  "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
-];
-
-const ALL_SERVICES = [
-  "Pressning", "Stärkning", "Vikning", "Express",
-];
-
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -43,6 +33,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [resetNumber, setResetNumber] = useState<number | "">("");
   const [resetDone, setResetDone] = useState(false);
+  const [garmentList, setGarmentList] = useState<string[]>([]);
+  const [serviceList, setServiceList] = useState<string[]>([]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -56,6 +48,8 @@ export default function SettingsPage() {
         setBrandColor(data.brandColor || "#82C58A");
         setPriceList(data.priceList || {});
         setBusinessName(data.businessName || "");
+        setGarmentList(data.garmentList || []);
+        setServiceList(data.serviceList || []);
         setLoading(false);
       });
   }, [status]);
@@ -65,7 +59,7 @@ export default function SettingsPage() {
     await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brandColor, priceList, businessName }),
+      body: JSON.stringify({ brandColor, priceList, businessName, garmentList, serviceList }),
     });
     setSaving(false);
     setSaved(true);
@@ -83,6 +77,31 @@ export default function SettingsPage() {
     setPriceList(next);
   }
 
+  function renameItem(
+    list: string[],
+    setList: (l: string[]) => void,
+    idx: number,
+    newName: string
+  ) {
+    const oldName = list[idx];
+    const next = [...list];
+    next[idx] = newName;
+    setList(next);
+    if (oldName && oldName !== newName && priceList[oldName] !== undefined) {
+      const nextPrices = { ...priceList, [newName]: priceList[oldName] };
+      delete nextPrices[oldName];
+      setPriceList(nextPrices);
+    }
+  }
+
+  function removeItem(list: string[], setList: (l: string[]) => void, idx: number) {
+    setList(list.filter((_, i) => i !== idx));
+  }
+
+  function addItem(list: string[], setList: (l: string[]) => void) {
+    setList([...list, ""]);
+  }
+
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -91,6 +110,76 @@ export default function SettingsPage() {
           style={{ borderColor: `${brandColor} transparent ${brandColor} ${brandColor}` }}
         />
       </div>
+    );
+  }
+
+  function ItemListEditor({
+    title,
+    list,
+    setList,
+    isService = false,
+    addLabel,
+  }: {
+    title: string;
+    list: string[];
+    setList: (l: string[]) => void;
+    isService?: boolean;
+    addLabel: string;
+  }) {
+    return (
+      <section>
+        <h2
+          className="mb-3 text-sm font-semibold uppercase tracking-wider"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {title}
+        </h2>
+        <div className="space-y-2">
+          {list.map((item, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 rounded-xl border-2 bg-white px-3 py-2"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => renameItem(list, setList, idx, e.target.value)}
+                placeholder={isService ? "Tjänstnamn..." : "Plaggnamn..."}
+                className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
+                style={{ color: "var(--text)" }}
+              />
+              <input
+                type="number"
+                min={0}
+                placeholder="—"
+                value={item ? (priceList[item] || "") : ""}
+                onChange={(e) => setPrice(item, e.target.value)}
+                disabled={!item}
+                className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
+                style={{ borderColor: "var(--border)" }}
+              />
+              <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+              <button
+                type="button"
+                onClick={() => removeItem(list, setList, idx)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition-colors hover:bg-red-50 hover:text-red-500"
+                style={{ color: "var(--text-light)" }}
+                title="Ta bort"
+              >×</button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => addItem(list, setList)}
+          className="mt-3 flex items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-2.5 text-sm font-medium transition-colors hover:border-current"
+          style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+        >
+          <span style={{ fontSize: "1rem", lineHeight: 1 }}>+</span>
+          {addLabel}
+        </button>
+      </section>
     );
   }
 
@@ -220,69 +309,19 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Price list */}
-        <section>
-          <h2
-            className="mb-3 text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("settings.priceList")}
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {ALL_GARMENTS.map((garment) => (
-              <div
-                key={garment}
-                className="flex items-center justify-between rounded-xl border-2 bg-white px-3 py-3"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {garment}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="—"
-                  value={priceList[garment] || ""}
-                  onChange={(e) => setPrice(garment, e.target.value)}
-                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
-                  style={{ borderColor: "var(--border)" }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Service prices */}
-        <section>
-          <h2
-            className="mb-3 text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("settings.servicePrices")}
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {ALL_SERVICES.map((service) => (
-              <div
-                key={service}
-                className="flex items-center justify-between rounded-xl border-2 bg-white px-3 py-3"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {service}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="—"
-                  value={priceList[service] || ""}
-                  onChange={(e) => setPrice(service, e.target.value)}
-                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
-                  style={{ borderColor: "var(--border)" }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+        <ItemListEditor
+          title={t("settings.priceList")}
+          list={garmentList}
+          setList={setGarmentList}
+          addLabel={t("settings.addGarment")}
+        />
+        <ItemListEditor
+          title={t("settings.servicePrices")}
+          list={serviceList}
+          setList={setServiceList}
+          isService
+          addLabel={t("settings.addService")}
+        />
       </main>
     </div>
   );
