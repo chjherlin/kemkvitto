@@ -74,6 +74,7 @@ export default function GarmentGrid({
         const active = !!entry && entry.qty > 0;
         const price = priceList[name] ?? 0;
         const isAnimating = lastTapped === name;
+        const hasQuickAdd = name === "Skjorta";
 
         return (
           <div
@@ -110,7 +111,7 @@ export default function GarmentGrid({
                 border: "none",
                 cursor: "pointer",
                 color: "inherit",
-                padding: "0.375rem 1.75rem 0.375rem 0.375rem",
+                padding: hasQuickAdd ? "0.375rem 1.75rem 0.375rem 0.375rem" : "0.375rem",
               }}
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
@@ -134,41 +135,43 @@ export default function GarmentGrid({
               </span>
             )}
 
-            {/* +5 — top right */}
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); addQty(name, 5); }}
-              title="Add 5"
-              style={{
-                ...cornerBtnBase,
-                top: "0.3rem",
-                right: "0.3rem",
-                backgroundColor: active
-                  ? `color-mix(in srgb, ${brandColor} 20%, white)`
-                  : "rgba(0,0,0,0.06)",
-                color: active ? brandColor : "var(--text-light)",
-              }}
-            >
-              +5
-            </button>
-
-            {/* +10 — bottom right */}
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); addQty(name, 10); }}
-              title="Add 10"
-              style={{
-                ...cornerBtnBase,
-                bottom: "0.3rem",
-                right: "0.3rem",
-                backgroundColor: active
-                  ? `color-mix(in srgb, ${brandColor} 20%, white)`
-                  : "rgba(0,0,0,0.06)",
-                color: active ? brandColor : "var(--text-light)",
-              }}
-            >
-              +10
-            </button>
+            {/* +5 / +10 corner buttons — Skjorta only */}
+            {hasQuickAdd && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); addQty(name, 5); }}
+                  title="Add 5"
+                  style={{
+                    ...cornerBtnBase,
+                    top: "0.3rem",
+                    right: "0.3rem",
+                    backgroundColor: active
+                      ? `color-mix(in srgb, ${brandColor} 20%, white)`
+                      : "rgba(0,0,0,0.06)",
+                    color: active ? brandColor : "var(--text-light)",
+                  }}
+                >
+                  +5
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); addQty(name, 10); }}
+                  title="Add 10"
+                  style={{
+                    ...cornerBtnBase,
+                    bottom: "0.3rem",
+                    right: "0.3rem",
+                    backgroundColor: active
+                      ? `color-mix(in srgb, ${brandColor} 20%, white)`
+                      : "rgba(0,0,0,0.06)",
+                    color: active ? brandColor : "var(--text-light)",
+                  }}
+                >
+                  +10
+                </button>
+              </>
+            )}
           </div>
         );
       })}
