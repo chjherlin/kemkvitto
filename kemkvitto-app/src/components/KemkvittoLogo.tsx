@@ -34,12 +34,23 @@ export default function KemkvittoLogo({
         fill="none"
         style={{ display: "block", flexShrink: 0, overflow: "visible" }}
       >
-        <path
-          d="M0,0 H18 V18 H12 V24 H0 Z"
+        {/* Portrait rectangle outline */}
+        <rect
+          x={0}
+          y={0}
+          width={18}
+          height={24}
+          rx={0}
           stroke={color}
           strokeWidth={s.strokeW}
-          strokeLinejoin="round"
           fill="none"
+        />
+        {/* Center dot */}
+        <circle
+          cx={9}
+          cy={12}
+          r={1.8}
+          fill={color}
         />
       </svg>
 
