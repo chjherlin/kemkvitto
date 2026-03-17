@@ -2,11 +2,13 @@
 
 interface KemkvittoLogoProps {
   color?: string;
+  iconBg?: string;
   size?: "sm" | "md" | "lg";
 }
 
 export default function KemkvittoLogo({
   color = "#0891b2",
+  iconBg,
   size = "md",
 }: KemkvittoLogoProps) {
   const sizes = {
@@ -25,7 +27,7 @@ export default function KemkvittoLogo({
         style={{
           width: s.icon,
           height: s.icon,
-          backgroundColor: color,
+          backgroundColor: iconBg ?? color,
         }}
       >
         <svg

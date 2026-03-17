@@ -229,7 +229,7 @@ export default function NewReceiptPage() {
       {/* ═══ HEADER ═══ */}
       <header className="pos-header" style={{ background: brandColor, borderBottom: 'none', color: 'white' }}>
         <div className="pos-header-left">
-          <KemkvittoLogo color="white" size="sm" />
+          <KemkvittoLogo color="white" iconBg="rgba(255,255,255,0.2)" size="sm" />
           <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>/</span>
           <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem", fontWeight: 600 }}>
             {session.user?.name}

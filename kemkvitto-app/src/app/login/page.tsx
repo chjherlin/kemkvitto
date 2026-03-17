@@ -10,7 +10,7 @@ import { useI18n } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -47,7 +47,19 @@ export default function LoginPage() {
             className="text-center text-base font-medium"
             style={{ color: "var(--text-muted)", maxWidth: "22rem", lineHeight: 1.5 }}
           >
-            {t("auth.tagline")}
+            {(() => {
+              const connector = locale === "sv" ? "och" : locale === "en" ? "and" : "og";
+              const full = t("auth.tagline");
+              const idx = full.indexOf(` ${connector} `);
+              if (idx === -1) return full;
+              return (
+                <>
+                  {full.slice(0, idx + 1)}
+                  <strong style={{ fontWeight: 800, color: "var(--text)" }}>{connector}</strong>
+                  {full.slice(idx + 1 + connector.length)}
+                </>
+              );
+            })()}
           </p>
         </div>
 
