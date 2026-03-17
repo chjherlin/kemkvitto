@@ -17,6 +17,15 @@ function todayISO(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+/** Mix a hex brand color with white at the given percentage (0–1). */
+function blendWithWhite(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mix = (c: number) => Math.round(c * alpha + 255 * (1 - alpha));
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 export default function NewReceiptPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -42,6 +51,7 @@ export default function NewReceiptPage() {
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
   const [showReceiptHelp, setShowReceiptHelp] = useState(false);
+  const [resetSaved, setResetSaved] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -212,8 +222,10 @@ export default function NewReceiptPage() {
     );
   }
 
+  const bgTint = blendWithWhite(brandColor, 0.18);
+
   return (
-    <div style={{ background: `color-mix(in srgb, ${brandColor} 14%, white)`, minHeight: '100vh' }}>
+    <div style={{ background: bgTint, minHeight: '100vh' }}>
       {/* ═══ HEADER ═══ */}
       <header className="pos-header" style={{ background: brandColor, borderBottom: 'none', color: 'white' }}>
         <div className="pos-header-left">
@@ -235,7 +247,7 @@ export default function NewReceiptPage() {
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <div className="pos-layout">
           {/* LEFT PANEL */}
-          <div className="pos-left">
+          <div className="pos-left" style={{ background: bgTint }}>
             {/* Garment grid — fills available space */}
             <div style={{ minHeight: 0 }}>
               <GarmentGrid
@@ -393,9 +405,12 @@ export default function NewReceiptPage() {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
                     });
+                    setResetSaved(true);
+                    setTimeout(() => setResetSaved(false), 1500);
                   }}
                   title={t("receipt.resetTitle")}
-                >{t("receipt.resetBtn")}</button>
+                  style={resetSaved ? { color: "var(--success)", borderColor: "var(--success)" } : undefined}
+                >{resetSaved ? "✓" : t("receipt.resetBtn")}</button>
                 <button
                   type="button"
                   className="pos-counter-special-btn"

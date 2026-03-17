@@ -39,7 +39,7 @@ export async function GET() {
     nextReceiptNumber: data?.next_receipt_number ?? 1,
     brandColor: (data as Record<string, unknown>)?.brand_color ?? "#0891b2",
     priceList: (data as Record<string, unknown>)?.price_list ?? {},
-    garmentList: ((data as Record<string, unknown>)?.garment_list as string[] | null) ?? DEFAULT_GARMENTS,
+    garmentList: (((data as Record<string, unknown>)?.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
     serviceList: ((data as Record<string, unknown>)?.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
 }

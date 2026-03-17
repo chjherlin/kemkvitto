@@ -98,6 +98,7 @@ export default function GarmentGrid({
                 padding: "0.5rem 0.375rem 0.25rem",
                 color: "inherit",
                 position: "relative",
+                minHeight: 0,
               }}
             >
               {active && (
@@ -114,10 +115,15 @@ export default function GarmentGrid({
               )}
             </button>
 
-            {/* ×5 / ×10 quick-add buttons */}
+            {/* +5 / +10 quick-add bar */}
             <div style={{
               display: "flex",
-              borderTop: `1px solid ${active ? `color-mix(in srgb, ${brandColor} 25%, white)` : "var(--border)"}`,
+              borderTop: `1px solid ${active ? `color-mix(in srgb, ${brandColor} 30%, white)` : "var(--border)"}`,
+              height: "1.875rem",
+              flexShrink: 0,
+              backgroundColor: active
+                ? `color-mix(in srgb, ${brandColor} 6%, white)`
+                : "color-mix(in srgb, var(--border) 30%, white)",
             }}>
               {[5, 10].map((n) => (
                 <button
@@ -127,15 +133,18 @@ export default function GarmentGrid({
                   title={`Add ${n}`}
                   style={{
                     flex: 1,
-                    padding: "0.2rem 0",
+                    padding: 0,
                     background: "none",
                     border: "none",
-                    borderRight: n === 5 ? `1px solid ${active ? `color-mix(in srgb, ${brandColor} 25%, white)` : "var(--border)"}` : "none",
+                    borderRight: n === 5 ? `1px solid ${active ? `color-mix(in srgb, ${brandColor} 30%, white)` : "var(--border)"}` : "none",
                     cursor: "pointer",
-                    fontSize: "0.65rem",
+                    fontSize: "0.7rem",
                     fontWeight: 700,
                     color: active ? brandColor : "var(--text-light)",
-                    letterSpacing: "0.01em",
+                    letterSpacing: "0.02em",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   +{n}

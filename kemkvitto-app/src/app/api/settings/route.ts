@@ -36,7 +36,7 @@ export async function GET() {
     brandColor: data.brand_color,
     priceList: data.price_list,
     businessName: data.business_name,
-    garmentList: (data.garment_list as string[] | null) ?? DEFAULT_GARMENTS,
+    garmentList: ((data.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
     serviceList: (data.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
 }
