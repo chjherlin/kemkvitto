@@ -3,6 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 
+const DEFAULT_GARMENTS = [
+  "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka", "Kjol",
+  "Poplin", "Matta", "Klänning", "Blus", "Skjorta", "Skjorta ×5", "Skjorta ×10",
+  "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
+];
+const DEFAULT_SERVICES = ["Pressning", "Stärkning", "Vikning", "Express"];
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -14,7 +21,7 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("washers")
-    .select("next_receipt_number, brand_color, price_list")
+    .select("next_receipt_number, brand_color, price_list, garment_list, service_list")
     .eq("id", washerId)
     .single();
 
@@ -32,5 +39,7 @@ export async function GET() {
     nextReceiptNumber: data?.next_receipt_number ?? 1,
     brandColor: (data as Record<string, unknown>)?.brand_color ?? "#0891b2",
     priceList: (data as Record<string, unknown>)?.price_list ?? {},
+    garmentList: ((data as Record<string, unknown>)?.garment_list as string[] | null) ?? DEFAULT_GARMENTS,
+    serviceList: ((data as Record<string, unknown>)?.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
 }
