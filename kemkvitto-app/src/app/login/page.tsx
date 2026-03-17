@@ -43,8 +43,11 @@ export default function LoginPage() {
       <div className="animate-fade-up w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4">
           <KemkvittoLogo size="lg" />
-          <p style={{ color: "var(--text-muted)" }}>
-            {t("auth.loginSubtitle")}
+          <p
+            className="text-center text-base font-medium"
+            style={{ color: "var(--text-muted)", maxWidth: "22rem", lineHeight: 1.5 }}
+          >
+            {t("auth.tagline")}
           </p>
         </div>
 
