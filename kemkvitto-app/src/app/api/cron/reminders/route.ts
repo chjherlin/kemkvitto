@@ -2,15 +2,26 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReminderEmail } from "@/lib/email";
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Require secret to prevent unauthorized triggering
+  const secret = request.headers.get("x-cron-secret");
+  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServiceClient();
-  const today = new Date().toISOString().split("T")[0];
+
+  // Tomorrow's date in local-friendly ISO format
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowISO = tomorrow.toISOString().split("T")[0];
 
   const { data: receipts, error } = await supabase
     .from("receipts")
     .select("*")
-    .eq("delivery_date", today)
+    .eq("delivery_date", tomorrowISO)
     .eq("reminder_sent", false)
+    .eq("paid", false)
     .neq("customer_email", "");
 
   if (error) {
@@ -18,12 +29,12 @@ export async function GET() {
   }
 
   if (!receipts || receipts.length === 0) {
-    return NextResponse.json({ message: "No reminders to send", count: 0 });
+    return NextResponse.json({ message: "No reminders to send", count: 0, date: tomorrowISO });
   }
 
-  // Cache washer info to avoid repeated lookups
   const washerCache: Record<string, { business_name: string; brand_color: string; price_list: Record<string, number> }> = {};
 
+  let sent = 0;
   for (const receipt of receipts) {
     if (!washerCache[receipt.washer_id]) {
       const { data: washer } = await supabase
@@ -34,16 +45,14 @@ export async function GET() {
       if (washer) washerCache[receipt.washer_id] = washer;
     }
 
-    await sendReminderEmail(receipt, washerCache[receipt.washer_id] ?? undefined);
-
-    await supabase
-      .from("receipts")
-      .update({ reminder_sent: true })
-      .eq("id", receipt.id);
+    try {
+      await sendReminderEmail(receipt, washerCache[receipt.washer_id] ?? undefined);
+      await supabase.from("receipts").update({ reminder_sent: true }).eq("id", receipt.id);
+      sent++;
+    } catch (err) {
+      console.error(`Failed reminder for receipt ${receipt.id}:`, err);
+    }
   }
 
-  return NextResponse.json({
-    message: `Sent ${receipts.length} reminders`,
-    count: receipts.length,
-  });
+  return NextResponse.json({ message: `Sent ${sent} reminders`, count: sent, date: tomorrowISO });
 }

@@ -274,7 +274,6 @@ export async function sendReminderEmail(
       ? getPaymentUrl(receipt.id)
       : null;
 
-  // Build the full receipt HTML (same as original email)
   const fullHtml = buildReceiptHTML(
     receipt,
     { business_name: businessName, brand_color: brandColor, price_list: priceList },
@@ -283,16 +282,14 @@ export async function sendReminderEmail(
     paymentUrl
   );
 
-  // Inject reminder banner after the header block
   const reminderBanner = `
         <tr><td style="padding:20px 24px 0;text-align:center;">
-          <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:16px;">
-            <p style="margin:0;color:#92400e;font-size:16px;font-weight:700;">Idag borde din kemtvätt vara klar!</p>
-            <p style="margin:6px 0 0;color:#a16207;font-size:13px;">Här är ditt kvitto:</p>
+          <div style="background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:16px;">
+            <p style="margin:0;color:#14532d;font-size:16px;font-weight:700;">Din kemtvätt är klar imorgon! 🎉</p>
+            <p style="margin:6px 0 0;color:#166534;font-size:13px;">Välkommen att hämta den ${receipt.delivery_date}.</p>
           </div>
         </td></tr>`;
 
-  // Insert after the header row (before customer info)
   const html = fullHtml.replace(
     '</td></tr>\n\n        <!-- Customer info -->',
     `</td></tr>\n\n        ${reminderBanner}\n\n        <!-- Customer info -->`
@@ -302,14 +299,76 @@ export async function sendReminderEmail(
     await resend.emails.send({
       from: EMAIL_FROM,
       to: receipt.customer_email,
-      subject: `Påminnelse: Kvitto #${receipt.receipt_number} — ${businessName}`,
+      subject: `Påminnelse: Din kemtvätt är klar imorgon — ${businessName}`,
       html,
     });
     console.log(`Reminder sent to ${receipt.customer_email} for receipt #${receipt.receipt_number}`);
   } else {
     console.log("=== REMINDER (Resend not configured) ===");
-    console.log(`To: ${receipt.customer_email}`);
-    console.log(`Receipt #${receipt.receipt_number} — full receipt reminder`);
+    console.log(`To: ${receipt.customer_email}, Receipt #${receipt.receipt_number}, ready ${receipt.delivery_date}`);
     console.log("========================================");
+  }
+}
+
+export async function sendDateUpdateEmail(
+  receipt: Receipt,
+  oldDate: string,
+  newDate: string,
+  washer?: WasherInfo
+): Promise<void> {
+  const priceList = washer?.price_list ?? {};
+  const lines = parseGarmentLines(receipt.garments, priceList);
+  const total = receipt.amount_total
+    ? receipt.amount_total / 100
+    : calculateTotal(lines);
+
+  const businessName = washer?.business_name ?? "Kemtvätt";
+  const brandColor = washer?.brand_color ?? "#82C58A";
+  const isSooner = newDate < oldDate;
+
+  const paymentUrl =
+    receipt.amount_total && receipt.amount_total > 0
+      ? getPaymentUrl(receipt.id)
+      : null;
+
+  const updatedReceipt = { ...receipt, delivery_date: newDate };
+  const fullHtml = buildReceiptHTML(
+    updatedReceipt,
+    { business_name: businessName, brand_color: brandColor, price_list: priceList },
+    lines,
+    total,
+    paymentUrl
+  );
+
+  const banner = isSooner
+    ? `<tr><td style="padding:20px 24px 0;text-align:center;">
+        <div style="background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:16px;">
+          <p style="margin:0;color:#14532d;font-size:16px;font-weight:700;">Goda nyheter! 🎉 Din kemtvätt är klar lite tidigare</p>
+          <p style="margin:6px 0 0;color:#166534;font-size:14px;">Nytt hämtningsdatum: <strong>${newDate}</strong></p>
+          <p style="margin:4px 0 0;color:#4ade80;font-size:12px;text-decoration:line-through;">${oldDate}</p>
+        </div>
+      </td></tr>`
+    : `<tr><td style="padding:20px 24px 0;text-align:center;">
+        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:16px;">
+          <p style="margin:0;color:#713f12;font-size:16px;font-weight:700;">Uppdatering kring din kemtvätt</p>
+          <p style="margin:6px 0 0;color:#92400e;font-size:14px;">Nytt hämtningsdatum: <strong>${newDate}</strong></p>
+          <p style="margin:4px 0 0;color:#a16207;font-size:12px;">Tidigare datum: ${oldDate}</p>
+        </div>
+      </td></tr>`;
+
+  const html = fullHtml.replace(
+    '</td></tr>\n\n        <!-- Customer info -->',
+    `</td></tr>\n\n        ${banner}\n\n        <!-- Customer info -->`
+  );
+
+  const subject = isSooner
+    ? `Goda nyheter! Din kemtvätt är klar tidigare — ${businessName}`
+    : `Uppdatering: Ändrat hämtningsdatum — ${businessName}`;
+
+  if (resend) {
+    await resend.emails.send({ from: EMAIL_FROM, to: receipt.customer_email, subject, html });
+    console.log(`Date update email sent to ${receipt.customer_email}, receipt #${receipt.receipt_number}: ${oldDate} → ${newDate}`);
+  } else {
+    console.log(`=== DATE UPDATE (Resend not configured): ${receipt.customer_email}, #${receipt.receipt_number}, ${oldDate} → ${newDate} ===`);
   }
 }
