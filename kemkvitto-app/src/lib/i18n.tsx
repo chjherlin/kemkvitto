@@ -58,6 +58,8 @@ const translations = {
   "settings.receiptNumberPlaceholder": { sv: "Nästa nummer...", en: "Next number...", da: "Næste nummer...", no: "Neste nummer..." },
   "settings.receiptNumberSet": { sv: "Sätt nummer", en: "Set number", da: "Sæt nummer", no: "Sett nummer" },
   "settings.receiptNumberReset": { sv: "Uppdaterat!", en: "Updated!", da: "Opdateret!", no: "Oppdatert!" },
+  "settings.addGarment": { sv: "Lägg till plagg", en: "Add garment", da: "Tilføj beklædning", no: "Legg til plagg" },
+  "settings.addService": { sv: "Lägg till tjänst", en: "Add service", da: "Tilføj tjeneste", no: "Legg til tjeneste" },
 
   // Customer email page
   "email.title": { sv: "Ange din e-post", en: "Enter your email", da: "Indtast din e-mail", no: "Skriv inn din e-post" },
@@ -92,6 +94,12 @@ const translations = {
   "auth.noAccount": { sv: "Inget konto?", en: "No account?", da: "Ingen konto?", no: "Ingen konto?" },
   "auth.hasAccount": { sv: "Har redan konto?", en: "Already have an account?", da: "Har allerede en konto?", no: "Har allerede en konto?" },
   "auth.loginSubtitle": { sv: "Logga in på ditt konto", en: "Log in to your account", da: "Log ind på din konto", no: "Logg inn på kontoen din" },
+  "auth.tagline": {
+    sv: "Papper och e-post, med påminnelse. Aldrig mer ett borttappat kvitto.",
+    en: "Paper and e-mail, with reminder. Never again a lost receipt.",
+    da: "Papir og e-mail, med påmindelse. Aldrig mere en tabt kvittering.",
+    no: "Papir og e-post, med påminnelse. Aldri mer en mistet kvittering.",
+  },
   "auth.registerSubtitle": { sv: "Skapa ditt konto", en: "Create your account", da: "Opret din konto", no: "Opprett kontoen din" },
   "auth.loggingIn": { sv: "Loggar in...", en: "Logging in...", da: "Logger ind...", no: "Logger inn..." },
   "auth.registering": { sv: "Registrerar...", en: "Registering...", da: "Registrerer...", no: "Registrerer..." },
