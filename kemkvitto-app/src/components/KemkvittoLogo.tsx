@@ -10,34 +10,31 @@ export default function KemkvittoLogo({
   size = "md",
 }: KemkvittoLogoProps) {
   const sizes = {
-    sm: { iconH: 20, fontSize: "1.0625rem", gap: "0.3rem",  strokeW: 1.8 },
-    md: { iconH: 32, fontSize: "1.625rem",  gap: "0.45rem", strokeW: 1.8 },
-    lg: { iconH: 52, fontSize: "2.625rem",  gap: "0.65rem", strokeW: 1.6 },
+    //                         iconH  iconW  fontSize       gap       stroke
+    sm: { iconH: 20, iconW: 15, fontSize: "1.0625rem", gap: "0.25rem", strokeW: 2.6 },
+    md: { iconH: 32, iconW: 24, fontSize: "1.625rem",  gap: "0.35rem", strokeW: 2.6 },
+    lg: { iconH: 52, iconW: 39, fontSize: "2.625rem",  gap: "0.55rem", strokeW: 2.4 },
   };
 
   const s = sizes[size];
-  // Receipt aspect ratio from reference: ~18:24 (3:4)
-  const iconW = Math.round(s.iconH * 0.75);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: s.gap }}>
       {/*
-        Receipt icon: portrait rectangle, notch at bottom-right.
-        ViewBox 18×24.  Shape:
-          top-left rounded corner → across top → top-right rounded corner
-          → down right side to y=18 → left to x=12 (notch top edge)
-          → down to y=24 → across bottom → bottom-left rounded corner
-          → up left side → close
+        Receipt icon — portrait rectangle, notch at bottom-right.
+        ViewBox 18×24. Tight corner radius (1.5 units).
+        Notch: x=12→18, y=18→24 (6 wide, 6 tall).
+        Thick stroke gives the bold feel of the reference logo.
       */}
       <svg
-        width={iconW}
+        width={s.iconW}
         height={s.iconH}
         viewBox="0 0 18 24"
         fill="none"
         style={{ display: "block", flexShrink: 0 }}
       >
         <path
-          d="M2,0 H16 Q18,0 18,2 V18 H12 V24 H2 Q0,24 0,22 V2 Q0,0 2,0 Z"
+          d="M1.5,0 H16.5 Q18,0 18,1.5 V18 H12 V24 H1.5 Q0,24 0,22.5 V1.5 Q0,0 1.5,0 Z"
           stroke={color}
           strokeWidth={s.strokeW}
           strokeLinejoin="round"
