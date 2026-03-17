@@ -139,14 +139,14 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--text-muted);
+  color: inherit;
   background: none;
   border: none;
   cursor: pointer;
 }
 .pos-header-nav a:hover,
 .pos-header-nav button:hover {
-  background: var(--bg);
+  background: rgba(0,0,0,0.08);
 }
 
 /* Two-panel layout */

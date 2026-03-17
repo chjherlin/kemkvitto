@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase";
 
 const DEFAULT_GARMENTS = [
   "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka", "Kjol",
-  "Poplin", "Matta", "Klänning", "Blus", "Skjorta", "Skjorta ×5", "Skjorta ×10",
+  "Poplin", "Matta", "Klänning", "Blus", "Skjorta",
   "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
 ];
 const DEFAULT_SERVICES = ["Pressning", "Stärkning", "Vikning", "Express"];

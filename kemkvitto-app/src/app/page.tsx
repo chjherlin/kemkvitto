@@ -213,13 +213,13 @@ export default function NewReceiptPage() {
   }
 
   return (
-    <div style={{ background: `linear-gradient(135deg, ${brandColor}12 0%, ${brandColor}06 50%, var(--bg) 100%)`, minHeight: '100vh' }}>
+    <div style={{ background: `color-mix(in srgb, ${brandColor} 14%, white)`, minHeight: '100vh' }}>
       {/* ═══ HEADER ═══ */}
-      <header className="pos-header">
+      <header className="pos-header" style={{ background: brandColor, borderBottom: 'none', color: 'white' }}>
         <div className="pos-header-left">
-          <KemkvittoLogo color={brandColor} size="sm" />
-          <span style={{ color: "var(--text-light)", fontSize: "0.75rem" }}>/</span>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 600 }}>
+          <KemkvittoLogo color="white" size="sm" />
+          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>/</span>
+          <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem", fontWeight: 600 }}>
             {session.user?.name}
           </span>
         </div>
@@ -349,11 +349,11 @@ export default function NewReceiptPage() {
                         lineHeight: 1.5,
                       }}
                     >
-                      Numret räknas upp automatiskt vid varje kvitto.
+                      {t("receipt.helpText")}
                       <br /><br />
-                      <strong>Engångsnummer</strong> — använd ett specialnummer för ett enskilt kvitto utan att påverka sekvensen.
+                      <strong>{t("receipt.oneTimeBtn")}</strong> — {t("receipt.helpOneTime")}
                       <br /><br />
-                      <strong>Återställ</strong> — sätt nästa nummer i sekvensen till det värde som visas nu.
+                      <strong>{t("receipt.resetBtn")}</strong> — {t("receipt.helpReset")}
                     </div>
                   )}
                 </div>
@@ -364,7 +364,7 @@ export default function NewReceiptPage() {
                   type="button"
                   className="pos-counter-btn"
                   onClick={() => setReceiptNumber((p) => Math.max(1, p - 1))}
-                  title="Minska"
+                  title="−"
                 >−</button>
                 <input
                   type="number"
@@ -394,8 +394,8 @@ export default function NewReceiptPage() {
                       body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
                     });
                   }}
-                  title="Återställ sekvensen från detta nummer"
-                >Återställ</button>
+                  title={t("receipt.resetTitle")}
+                >{t("receipt.resetBtn")}</button>
                 <button
                   type="button"
                   className="pos-counter-special-btn"
@@ -405,7 +405,8 @@ export default function NewReceiptPage() {
                     color: specialMode ? brandColor : "var(--text-muted)",
                   }}
                   onClick={() => { setSpecialMode((p) => !p); setSpecialNumber(""); }}
-                >Engångsnummer</button>
+                  title={t("receipt.oneTimeTitle")}
+                >{t("receipt.oneTimeBtn")}</button>
               </div>
               {specialMode && (
                 <div className="pos-special-row">

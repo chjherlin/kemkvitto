@@ -12,7 +12,7 @@ interface GarmentGridProps {
   onChange: (garments: Record<string, GarmentEntry>) => void;
   priceList: Record<string, number>;
   brandColor: string;
-  garmentList: string[];  // replaces hardcoded ALL_GARMENTS
+  garmentList: string[];
 }
 
 export default function GarmentGrid({
@@ -26,27 +26,10 @@ export default function GarmentGrid({
   const [lastTapped, setLastTapped] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  // Detect "Skjorta ×5" style tiles — tap adds N units to the base item
-  function parseBulk(name: string): { base: string; qty: number } | null {
-    const m = name.match(/^(.+)\s[×x](\d+)$/);
-    return m ? { base: m[1], qty: parseInt(m[2]) } : null;
-  }
-
-  const tap = useCallback((name: string) => {
+  const addQty = useCallback((name: string, qty: number) => {
     setLastTapped(name);
-    const bulk = parseBulk(name);
     const next = { ...garments };
-    if (bulk) {
-      // Add bulk.qty to the base garment (e.g. "Skjorta ×5" → adds 5 to "Skjorta")
-      const base = bulk.base;
-      next[base] = { qty: (next[base]?.qty ?? 0) + bulk.qty };
-    } else {
-      if (next[name]) {
-        next[name] = { ...next[name], qty: next[name].qty + 1 };
-      } else {
-        next[name] = { qty: 1 };
-      }
-    }
+    next[name] = { qty: (next[name]?.qty ?? 0) + qty };
     onChange(next);
     setTimeout(() => setLastTapped(null), 150);
   }, [garments, onChange]);
@@ -71,50 +54,95 @@ export default function GarmentGrid({
   return (
     <div className="pos-garment-grid-flat">
       {garmentList.map((name) => {
-        const bulk = parseBulk(name);
-        const entry = bulk ? garments[bulk.base] : garments[name];
-        const active = bulk ? !!garments[bulk.base] : !!entry;
-        const price = bulk
-          ? (priceList[bulk.base] ?? 0) * bulk.qty || (priceList[name] ?? 0)
-          : (priceList[name] ?? 0);
+        const entry = garments[name];
+        const active = !!entry && entry.qty > 0;
+        const price = priceList[name] ?? 0;
         const isAnimating = lastTapped === name;
 
         return (
-          <button
+          <div
             key={name}
-            type="button"
-            onClick={() => tap(name)}
-            onMouseDown={() => !bulk && active && startLongPress(name)}
-            onMouseUp={cancelLongPress}
-            onMouseLeave={cancelLongPress}
-            onTouchStart={() => !bulk && active && startLongPress(name)}
-            onTouchEnd={cancelLongPress}
             className={`pos-garment-tile ${isAnimating ? "chip-select" : ""}`}
             style={{
-              backgroundColor: bulk
-                ? `color-mix(in srgb, ${brandColor} 6%, white)`
-                : active
-                  ? `color-mix(in srgb, ${brandColor} 12%, white)`
-                  : "var(--bg-card)",
-              borderColor: bulk ? brandColor : active ? brandColor : "var(--border)",
-              borderStyle: bulk ? "dashed" : "solid",
-              color: bulk ? brandColor : active ? brandColor : "var(--text)",
-              opacity: bulk ? 0.85 : 1,
+              backgroundColor: active
+                ? `color-mix(in srgb, ${brandColor} 12%, white)`
+                : "var(--bg-card)",
+              borderColor: active ? brandColor : "var(--border)",
+              color: active ? brandColor : "var(--text)",
+              display: "flex",
+              flexDirection: "column",
+              padding: 0,
+              overflow: "hidden",
+              cursor: "default",
             }}
           >
-            {!bulk && active && entry && entry.qty > 0 && (
-              <span
-                className="pos-tile-badge"
-                style={{ backgroundColor: brandColor }}
-              >
-                ×{entry.qty}
-              </span>
-            )}
-            <span className="pos-tile-name">{tGarment(name)}</span>
-            {price > 0 && (
-              <span className="pos-tile-price">{price} kr</span>
-            )}
-          </button>
+            {/* Main tap area */}
+            <button
+              type="button"
+              onClick={() => addQty(name, 1)}
+              onMouseDown={() => active && startLongPress(name)}
+              onMouseUp={cancelLongPress}
+              onMouseLeave={cancelLongPress}
+              onTouchStart={() => active && startLongPress(name)}
+              onTouchEnd={cancelLongPress}
+              title={active ? "Long-press to remove" : undefined}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0.5rem 0.375rem 0.25rem",
+                color: "inherit",
+                position: "relative",
+              }}
+            >
+              {active && (
+                <span
+                  className="pos-tile-badge"
+                  style={{ backgroundColor: brandColor }}
+                >
+                  ×{entry.qty}
+                </span>
+              )}
+              <span className="pos-tile-name">{tGarment(name)}</span>
+              {price > 0 && (
+                <span className="pos-tile-price">{price} kr</span>
+              )}
+            </button>
+
+            {/* ×5 / ×10 quick-add buttons */}
+            <div style={{
+              display: "flex",
+              borderTop: `1px solid ${active ? `color-mix(in srgb, ${brandColor} 25%, white)` : "var(--border)"}`,
+            }}>
+              {[5, 10].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); addQty(name, n); }}
+                  title={`Add ${n}`}
+                  style={{
+                    flex: 1,
+                    padding: "0.2rem 0",
+                    background: "none",
+                    border: "none",
+                    borderRight: n === 5 ? `1px solid ${active ? `color-mix(in srgb, ${brandColor} 25%, white)` : "var(--border)"}` : "none",
+                    cursor: "pointer",
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
+                    color: active ? brandColor : "var(--text-light)",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  +{n}
+                </button>
+              ))}
+            </div>
+          </div>
         );
       })}
     </div>

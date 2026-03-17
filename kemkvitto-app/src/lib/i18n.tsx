@@ -61,6 +61,15 @@ const translations = {
   "settings.addGarment": { sv: "Lägg till plagg", en: "Add garment", da: "Tilføj beklædning", no: "Legg til plagg" },
   "settings.addService": { sv: "Lägg till tjänst", en: "Add service", da: "Tilføj tjeneste", no: "Legg til tjeneste" },
 
+  // Receipt number controls
+  "receipt.resetBtn": { sv: "Återställ", en: "Reset", da: "Nulstil", no: "Tilbakestill" },
+  "receipt.resetTitle": { sv: "Spara detta nummer som nästa i sekvensen", en: "Save this as the next receipt number", da: "Gem dette som næste kvitteringsnummer", no: "Lagre dette som neste kvitteringsnummer" },
+  "receipt.oneTimeBtn": { sv: "Engångsnummer", en: "One-time #", da: "Engangsnr.", no: "Engangsnr." },
+  "receipt.oneTimeTitle": { sv: "Tillfälligt nummer för detta kvitto — påverkar inte sekvensen", en: "Temporary number for this receipt — does not affect the sequence", da: "Midlertidigt nummer til denne kvittering — påvirker ikke sekvensen", no: "Midlertidig nummer for denne kvitteringen — påvirker ikke sekvensen" },
+  "receipt.helpText": { sv: "Numret räknas upp automatiskt vid varje kvitto.", en: "The receipt number increments automatically with each receipt.", da: "Nummeret tæller automatisk op ved hvert bon.", no: "Nummeret teller automatisk opp ved hver kvittering." },
+  "receipt.helpOneTime": { sv: "använd ett specialnummer för ett enskilt kvitto utan att påverka sekvensen.", en: "use a temporary number for a single receipt without affecting the sequence.", da: "brug et specialnummer til en enkelt kvittering uden at påvirke sekvensen.", no: "bruk et spesialnummer for en enkelt kvittering uten å påvirke sekvensen." },
+  "receipt.helpReset": { sv: "sätt nästa nummer i sekvensen till det värde som visas nu.", en: "set the next number in the sequence to the value shown now.", da: "sæt det næste nummer i sekvensen til den viste værdi.", no: "sett neste nummer i sekvensen til verdien som vises nå." },
+
   // Customer email page
   "email.title": { sv: "Ange din e-post", en: "Enter your email", da: "Indtast din e-mail", no: "Skriv inn din e-post" },
   "email.subtitle": { sv: "Så skickar vi kvittot till dig", en: "We'll send the receipt to you", da: "Så sender vi kvitteringen til dig", no: "Så sender vi kvitteringen til deg" },
