@@ -222,7 +222,7 @@ export default function NewReceiptPage() {
     );
   }
 
-  const bgTint = blendWithWhite(brandColor, 0.18);
+  const bgTint = blendWithWhite(brandColor, 0.28);
 
   return (
     <div style={{ background: bgTint, minHeight: '100vh' }}>

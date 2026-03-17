@@ -315,7 +315,8 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 .pos-tile-badge {
   position: absolute;
   top: 0.25rem;
-  right: 0.25rem;
+  left: 0.25rem;
+  right: auto;
   background: var(--brand);
   color: white;
   font-family: 'JetBrains Mono', monospace;
@@ -326,6 +327,8 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   line-height: 1.2;
   min-width: 1.5rem;
   text-align: center;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .pos-tile-name {
