@@ -26,13 +26,26 @@ export default function GarmentGrid({
   const [lastTapped, setLastTapped] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
+  // Detect "Skjorta ×5" style tiles — tap adds N units to the base item
+  function parseBulk(name: string): { base: string; qty: number } | null {
+    const m = name.match(/^(.+)\s[×x](\d+)$/);
+    return m ? { base: m[1], qty: parseInt(m[2]) } : null;
+  }
+
   const tap = useCallback((name: string) => {
     setLastTapped(name);
+    const bulk = parseBulk(name);
     const next = { ...garments };
-    if (next[name]) {
-      next[name] = { ...next[name], qty: next[name].qty + 1 };
+    if (bulk) {
+      // Add bulk.qty to the base garment (e.g. "Skjorta ×5" → adds 5 to "Skjorta")
+      const base = bulk.base;
+      next[base] = { qty: (next[base]?.qty ?? 0) + bulk.qty };
     } else {
-      next[name] = { qty: 1 };
+      if (next[name]) {
+        next[name] = { ...next[name], qty: next[name].qty + 1 };
+      } else {
+        next[name] = { qty: 1 };
+      }
     }
     onChange(next);
     setTimeout(() => setLastTapped(null), 150);
@@ -58,9 +71,12 @@ export default function GarmentGrid({
   return (
     <div className="pos-garment-grid-flat">
       {garmentList.map((name) => {
-        const entry = garments[name];
-        const active = !!entry;
-        const price = priceList[name] ?? 0;
+        const bulk = parseBulk(name);
+        const entry = bulk ? garments[bulk.base] : garments[name];
+        const active = bulk ? !!garments[bulk.base] : !!entry;
+        const price = bulk
+          ? (priceList[bulk.base] ?? 0) * bulk.qty || (priceList[name] ?? 0)
+          : (priceList[name] ?? 0);
         const isAnimating = lastTapped === name;
 
         return (
@@ -68,21 +84,25 @@ export default function GarmentGrid({
             key={name}
             type="button"
             onClick={() => tap(name)}
-            onMouseDown={() => active && startLongPress(name)}
+            onMouseDown={() => !bulk && active && startLongPress(name)}
             onMouseUp={cancelLongPress}
             onMouseLeave={cancelLongPress}
-            onTouchStart={() => active && startLongPress(name)}
+            onTouchStart={() => !bulk && active && startLongPress(name)}
             onTouchEnd={cancelLongPress}
             className={`pos-garment-tile ${isAnimating ? "chip-select" : ""}`}
             style={{
-              backgroundColor: active
-                ? `color-mix(in srgb, ${brandColor} 12%, white)`
-                : "var(--bg-card)",
-              borderColor: active ? brandColor : "var(--border)",
-              color: active ? brandColor : "var(--text)",
+              backgroundColor: bulk
+                ? `color-mix(in srgb, ${brandColor} 6%, white)`
+                : active
+                  ? `color-mix(in srgb, ${brandColor} 12%, white)`
+                  : "var(--bg-card)",
+              borderColor: bulk ? brandColor : active ? brandColor : "var(--border)",
+              borderStyle: bulk ? "dashed" : "solid",
+              color: bulk ? brandColor : active ? brandColor : "var(--text)",
+              opacity: bulk ? 0.85 : 1,
             }}
           >
-            {active && entry.qty > 0 && (
+            {!bulk && active && entry && entry.qty > 0 && (
               <span
                 className="pos-tile-badge"
                 style={{ backgroundColor: brandColor }}
