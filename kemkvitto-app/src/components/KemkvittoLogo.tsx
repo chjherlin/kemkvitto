@@ -11,14 +11,13 @@ export default function KemkvittoLogo({
 }: KemkvittoLogoProps) {
   // White variant: use the transparent PNG (exact brand asset, white pixels)
   if (color === "white") {
-    const heights = { sm: 22, md: 36, lg: 58 };
+    const heights = { sm: 28, md: 40, lg: 60 };
     const h = heights[size];
     return (
       <img
         src="/kemkvitto-logo-white.png"
-        height={h}
         alt="kemkvitto"
-        style={{ display: "block", width: "auto" }}
+        style={{ display: "block", height: h, width: "auto" }}
       />
     );
   }
