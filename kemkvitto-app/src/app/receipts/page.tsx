@@ -34,7 +34,7 @@ interface EditModalProps {
   brandColor: string;
   garmentList: string[];
   priceList: Record<string, number>;
-  onSave: (updated: Partial<Receipt>) => void;
+  onSave: (updated: Partial<Receipt>) => Promise<boolean>;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -55,6 +55,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDele
   const [comment, setComment] = useState(receipt.comment ?? "");
   const [addGarment, setAddGarment] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const serviceKeys = ["pressning", "starkning", "vikning", "express"] as const;
@@ -79,11 +80,13 @@ function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDele
 
   async function handleSave() {
     setSaving(true);
+    setSaveError("");
     const garmentsOut: Record<string, { qty: number }> = {};
     for (const [k, qty] of Object.entries(garments)) {
       garmentsOut[k] = { qty };
     }
-    await onSave({ garments: garmentsOut as unknown as Record<string, number>, services, delivery_date: deliveryDate, customer_name: customerName, customer_email: customerEmail, comment, amount_total: grandTotal * 100 });
+    const ok = await onSave({ garments: garmentsOut as unknown as Record<string, number>, services, delivery_date: deliveryDate, customer_name: customerName, customer_email: customerEmail, comment, amount_total: grandTotal * 100 });
+    if (!ok) setSaveError("Kunde inte spara. Försök igen.");
     setSaving(false);
   }
 
@@ -252,6 +255,11 @@ function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDele
           </div>
         )}
 
+        {/* Save error */}
+        {saveError && (
+          <p style={{ color: "var(--danger)", fontSize: "0.8125rem", marginBottom: "0.5rem", textAlign: "center" }}>{saveError}</p>
+        )}
+
         {/* Actions */}
         <div style={{ display: "flex", gap: "0.75rem" }}>
           {confirmDelete ? (
@@ -328,8 +336,8 @@ export default function ReceiptsPage() {
     loadReceipts().then(() => setLoading(false));
   }, [status, loadReceipts]);
 
-  const handleSave = useCallback(async (updated: Partial<Receipt>) => {
-    if (!editingReceipt) return;
+  const handleSave = useCallback(async (updated: Partial<Receipt>): Promise<boolean> => {
+    if (!editingReceipt) return false;
     const res = await fetch(`/api/receipts/${editingReceipt.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -348,7 +356,11 @@ export default function ReceiptsPage() {
       setEditingReceipt(null);
       setSaveMsg("Sparat!");
       setTimeout(() => setSaveMsg(null), 2000);
+      return true;
     }
+    const body = await res.json().catch(() => ({}));
+    console.error("PATCH failed:", res.status, body);
+    return false;
   }, [editingReceipt, loadReceipts]);
 
   const handleDelete = useCallback(async () => {

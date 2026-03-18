@@ -33,7 +33,7 @@ export default function NewReceiptPage() {
 
   const [receiptNumber, setReceiptNumber] = useState(1);
   const [specialMode, setSpecialMode] = useState(false);
-  const [specialNumber, setSpecialNumber] = useState<number | "">("");
+  const [specialNumber, setSpecialNumber] = useState<string>("");
 
   const [garments, setGarments] = useState<Record<string, GarmentEntry>>({});
   const [services, setServices] = useState<string[]>(["pressning"]);
@@ -45,8 +45,9 @@ export default function NewReceiptPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [successInfo, setSuccessInfo] = useState<{ receiptNum: number; emailSent: boolean; customerName: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ receiptNum: string | number; emailSent: boolean; customerName: string } | null>(null);
   const [brandColor, setBrandColor] = useState("#82C58A");
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
@@ -63,10 +64,11 @@ export default function NewReceiptPage() {
         .then((r) => r.json())
         .then((data) => {
           setReceiptNumber(data.nextReceiptNumber);
-          if (data.brandColor) setBrandColor(data.brandColor);
+          setBrandColor(data.brandColor || "#82C58A");
           if (data.priceList) setPriceList(data.priceList);
           if (data.garmentList) setGarmentList(data.garmentList);
           if (data.serviceList) setServiceList(data.serviceList);
+          setSettingsLoaded(true);
         });
     }
   }, [status]);
@@ -109,7 +111,7 @@ export default function NewReceiptPage() {
     setGarments((prev) => ({ ...prev, [garment]: { ...prev[garment], qty } }));
   }, [handleRemove]);
 
-  const effectiveReceiptNumber = specialMode && specialNumber !== "" ? Number(specialNumber) : receiptNumber;
+  const effectiveReceiptNumber: string | number = specialMode && specialNumber !== "" ? specialNumber : receiptNumber;
 
   async function handleSubmit() {
     if (Object.keys(garments).length === 0 || !deliveryDate) return;
@@ -153,12 +155,12 @@ export default function NewReceiptPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !settingsLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div
           className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"
-          style={{ borderColor: `${brandColor} transparent ${brandColor} ${brandColor}` }}
+          style={{ borderColor: "#82C58A transparent #82C58A #82C58A" }}
         />
       </div>
     );
@@ -427,11 +429,9 @@ export default function NewReceiptPage() {
                 <div className="pos-special-row">
                   <span style={{ color: "var(--text-light)", fontSize: "0.75rem" }}>#</span>
                   <input
-                    type="number"
-                    min={1}
-                    max={999999}
+                    type="text"
                     value={specialNumber}
-                    onChange={(e) => setSpecialNumber(parseInt(e.target.value) || "")}
+                    onChange={(e) => setSpecialNumber(e.target.value)}
                     className="pos-counter-input"
                     style={{ color: brandColor, flex: 1 }}
                     placeholder="Ange specialnummer..."
