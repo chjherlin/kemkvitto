@@ -40,6 +40,8 @@ log.md
 *.png
 *.mp4
 *.mov
+# Exception: brand assets in public/
+!kemkvitto-app/public/*.png
 
 # Project data
 data/
