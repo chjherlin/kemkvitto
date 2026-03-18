@@ -20,6 +20,86 @@ const BRAND_COLORS = [
   "#ACA6A2", // grå (grey)
 ];
 
+function ItemListEditor({
+  title,
+  list,
+  setList,
+  isService = false,
+  addLabel,
+  priceList,
+  onRename,
+  onRemove,
+  onAdd,
+  onPriceChange,
+}: {
+  title: string;
+  list: string[];
+  setList: (l: string[]) => void;
+  isService?: boolean;
+  addLabel: string;
+  priceList: Record<string, number>;
+  onRename: (idx: number, newName: string) => void;
+  onRemove: (idx: number) => void;
+  onAdd: () => void;
+  onPriceChange: (item: string, value: string) => void;
+}) {
+  return (
+    <section>
+      <h2
+        className="mb-3 text-sm font-semibold uppercase tracking-wider"
+        style={{ color: "var(--text-muted)" }}
+      >
+        {title}
+      </h2>
+      <div className="space-y-2">
+        {list.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex items-center gap-2 rounded-xl border-2 bg-white px-3 py-2"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => onRename(idx, e.target.value)}
+              placeholder={isService ? "Tjänstnamn..." : "Plaggnamn..."}
+              className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
+              style={{ color: "var(--text)" }}
+            />
+            <input
+              type="number"
+              min={0}
+              placeholder="—"
+              value={item ? (priceList[item] || "") : ""}
+              onChange={(e) => onPriceChange(item, e.target.value)}
+              disabled={!item}
+              className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
+              style={{ borderColor: "var(--border)" }}
+            />
+            <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+            <button
+              type="button"
+              onClick={() => onRemove(idx)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition-colors hover:bg-red-50 hover:text-red-500"
+              style={{ color: "var(--text-light)" }}
+              title="Ta bort"
+            >×</button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-3 flex items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-2.5 text-sm font-medium transition-colors hover:border-current"
+        style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+      >
+        <span style={{ fontSize: "1rem", lineHeight: 1 }}>+</span>
+        {addLabel}
+      </button>
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -110,76 +190,6 @@ export default function SettingsPage() {
           style={{ borderColor: `${brandColor} transparent ${brandColor} ${brandColor}` }}
         />
       </div>
-    );
-  }
-
-  function ItemListEditor({
-    title,
-    list,
-    setList,
-    isService = false,
-    addLabel,
-  }: {
-    title: string;
-    list: string[];
-    setList: (l: string[]) => void;
-    isService?: boolean;
-    addLabel: string;
-  }) {
-    return (
-      <section>
-        <h2
-          className="mb-3 text-sm font-semibold uppercase tracking-wider"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {title}
-        </h2>
-        <div className="space-y-2">
-          {list.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-2 rounded-xl border-2 bg-white px-3 py-2"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <input
-                type="text"
-                value={item}
-                onChange={(e) => renameItem(list, setList, idx, e.target.value)}
-                placeholder={isService ? "Tjänstnamn..." : "Plaggnamn..."}
-                className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
-                style={{ color: "var(--text)" }}
-              />
-              <input
-                type="number"
-                min={0}
-                placeholder="—"
-                value={item ? (priceList[item] || "") : ""}
-                onChange={(e) => setPrice(item, e.target.value)}
-                disabled={!item}
-                className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
-                style={{ borderColor: "var(--border)" }}
-              />
-              <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
-              <button
-                type="button"
-                onClick={() => removeItem(list, setList, idx)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition-colors hover:bg-red-50 hover:text-red-500"
-                style={{ color: "var(--text-light)" }}
-                title="Ta bort"
-              >×</button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => addItem(list, setList)}
-          className="mt-3 flex items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-2.5 text-sm font-medium transition-colors hover:border-current"
-          style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
-        >
-          <span style={{ fontSize: "1rem", lineHeight: 1 }}>+</span>
-          {addLabel}
-        </button>
-      </section>
     );
   }
 
@@ -314,6 +324,11 @@ export default function SettingsPage() {
           list={garmentList}
           setList={setGarmentList}
           addLabel={t("settings.addGarment")}
+          priceList={priceList}
+          onRename={(idx, name) => renameItem(garmentList, setGarmentList, idx, name)}
+          onRemove={(idx) => removeItem(garmentList, setGarmentList, idx)}
+          onAdd={() => addItem(garmentList, setGarmentList)}
+          onPriceChange={setPrice}
         />
         <ItemListEditor
           title={t("settings.servicePrices")}
@@ -321,6 +336,11 @@ export default function SettingsPage() {
           setList={setServiceList}
           isService
           addLabel={t("settings.addService")}
+          priceList={priceList}
+          onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
+          onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
+          onAdd={() => addItem(serviceList, setServiceList)}
+          onPriceChange={setPrice}
         />
       </main>
     </div>
