@@ -1,6 +1,8 @@
 {
   "name": "kemkvitto-app",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Digital receipt system for Swedish dry cleaners",
+  "author": "Parallaxintel.xyz",
   "private": true,
   "scripts": {
     "dev": "next dev",

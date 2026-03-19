@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
 
-// Columns added in migrations 003 and 004 that may not exist yet
-const OPTIONAL_COLUMNS = ["customer_name", "customer_phone", "drop_off_date", "amount_total", "tag_number", "paid", "services"];
+// These columns don't exist on all deployments — stripped and retried if insert fails
+const OPTIONAL_COLUMNS = ["customer_name", "customer_phone", "drop_off_date", "amount_total", "tag_number", "services"];
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -16,8 +16,7 @@ export async function POST(request: Request) {
   const washerId = (session.user as { id: string }).id;
   const {
     receiptNumber, nextReceiptNumber, tagNumber, garments, deliveryDate, dropOffDate,
-    comment, customerName, customerPhone, customerEmail, amountTotal,
-    paid, services,
+    comment, customerName, customerPhone, customerEmail, amountTotal, services,
   } = await request.json();
 
   if (!receiptNumber || !garments || !deliveryDate) {
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
     customer_phone: customerPhone || null,
     drop_off_date: dropOffDate || null,
     amount_total: amountTotal || 0,
-    paid: paid ?? false,
     services: services ?? [],
   };
 
@@ -111,14 +109,13 @@ export async function POST(request: Request) {
         .eq("id", washerId)
         .single();
 
-      // Ensure the receipt object has customer fields even if DB doesn't
+      // Merge in fields that the DB may not have returned (optional columns)
       const receiptForEmail = {
         ...data!,
         customer_email: customerEmail,
         customer_name: customerName || null,
         customer_phone: customerPhone || null,
         drop_off_date: dropOffDate || null,
-        paid: paid ?? false,
         services: services ?? [],
       };
 

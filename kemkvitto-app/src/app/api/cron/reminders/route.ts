@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     .select("*")
     .eq("delivery_date", tomorrowISO)
     .eq("reminder_sent", false)
-    .eq("paid", false)
+    .neq("payment_status", "paid")
     .neq("customer_email", "");
 
   if (error) {
