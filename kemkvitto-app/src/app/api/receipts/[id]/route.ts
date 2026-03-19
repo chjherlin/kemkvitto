@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
-import { sendDateUpdateEmail } from "@/lib/email";
+import { sendReceiptEmail, sendDateUpdateEmail } from "@/lib/email";
 
 export async function PATCH(
   request: Request,
@@ -17,10 +17,12 @@ export async function PATCH(
   const { id } = await params;
   const supabase = createServiceClient();
 
-  // Fetch existing receipt to check ownership and detect date change
+  // Fetch existing receipt to check ownership and detect changes.
+  // Only select columns guaranteed to exist (migration 001 + 004).
+  // Avoid selecting `paid` — it's not in any migration; use payment_status instead.
   const { data: existing } = await supabase
     .from("receipts")
-    .select("washer_id, delivery_date, customer_email, paid, reminder_sent")
+    .select("washer_id, delivery_date, customer_email, payment_status, reminder_sent")
     .eq("id", id)
     .single();
 
@@ -32,8 +34,10 @@ export async function PATCH(
   const { garments, services, deliveryDate, customerName, customerEmail, comment, amountTotal } = body;
 
   const dateChanged = deliveryDate && deliveryDate !== existing.delivery_date;
+  const isPaid = existing.payment_status === "paid";
 
-  const { error } = await supabase
+  // Try full update (including services); fall back without services if column missing
+  let updateError = (await supabase
     .from("receipts")
     .update({
       garments,
@@ -43,17 +47,31 @@ export async function PATCH(
       customer_email: customerEmail || "",
       comment: comment || null,
       amount_total: amountTotal ?? 0,
-      // Reset reminder so day-before fires again on new date
       ...(dateChanged ? { reminder_sent: false } : {}),
     })
-    .eq("id", id);
+    .eq("id", id)).error;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (updateError?.code === "42703" || updateError?.code === "PGRST204") {
+    updateError = (await supabase
+      .from("receipts")
+      .update({
+        garments,
+        delivery_date: deliveryDate,
+        customer_name: customerName || null,
+        customer_email: customerEmail || "",
+        comment: comment || null,
+        amount_total: amountTotal ?? 0,
+        ...(dateChanged ? { reminder_sent: false } : {}),
+      })
+      .eq("id", id)).error;
   }
 
-  // Send date-change notification if date shifted and customer has email and isn't paid
-  if (dateChanged && customerEmail && !existing.paid) {
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  // Send update email to customer if they have an email and receipt isn't paid
+  if (customerEmail && !isPaid) {
     try {
       const { data: washer } = await supabase
         .from("washers")
@@ -61,9 +79,16 @@ export async function PATCH(
         .eq("id", washerId)
         .single();
 
+      // Get receipt_number for email subject
+      const { data: full } = await supabase
+        .from("receipts")
+        .select("receipt_number")
+        .eq("id", id)
+        .single();
+
       const updatedReceipt = {
         id,
-        receipt_number: 0, // will be fetched below
+        receipt_number: full?.receipt_number ?? 0,
         garments,
         delivery_date: deliveryDate,
         customer_email: customerEmail,
@@ -74,23 +99,18 @@ export async function PATCH(
         services: services ?? [],
       };
 
-      // Get receipt_number for email subject
-      const { data: full } = await supabase
-        .from("receipts")
-        .select("receipt_number")
-        .eq("id", id)
-        .single();
-
-      updatedReceipt.receipt_number = full?.receipt_number ?? 0;
-
-      await sendDateUpdateEmail(
-        updatedReceipt,
-        existing.delivery_date,
-        deliveryDate,
-        washer ?? undefined
-      );
+      if (dateChanged) {
+        await sendDateUpdateEmail(
+          updatedReceipt,
+          existing.delivery_date,
+          deliveryDate,
+          washer ?? undefined
+        );
+      } else {
+        await sendReceiptEmail(updatedReceipt, washer ?? undefined);
+      }
     } catch (err) {
-      console.error("Failed to send date update email:", err);
+      console.error("Failed to send update email:", err);
       // Don't fail the request over an email error
     }
   }

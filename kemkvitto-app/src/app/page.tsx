@@ -36,7 +36,7 @@ export default function NewReceiptPage() {
   const [specialNumber, setSpecialNumber] = useState<string>("");
 
   const [garments, setGarments] = useState<Record<string, GarmentEntry>>({});
-  const [services, setServices] = useState<string[]>(["pressning"]);
+  const [services, setServices] = useState<string[]>([]);
   const [dropOffDate, setDropOffDate] = useState(todayISO());
   const [deliveryDate, setDeliveryDate] = useState(getDefaultDeliveryDate());
   const [comment, setComment] = useState("");
@@ -51,6 +51,7 @@ export default function NewReceiptPage() {
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
+  const [businessName, setBusinessName] = useState("");
   const [showReceiptHelp, setShowReceiptHelp] = useState(false);
   const [resetSaved, setResetSaved] = useState(false);
 
@@ -68,6 +69,7 @@ export default function NewReceiptPage() {
           if (data.priceList) setPriceList(data.priceList);
           if (data.garmentList) setGarmentList(data.garmentList);
           if (data.serviceList) setServiceList(data.serviceList);
+          if (data.businessName) setBusinessName(data.businessName);
           setSettingsLoaded(true);
         });
     }
@@ -168,7 +170,7 @@ export default function NewReceiptPage() {
 
   function resetForm() {
     setGarments({});
-    setServices(["pressning"]);
+    setServices([]);
     setDropOffDate(todayISO());
     setDeliveryDate(getDefaultDeliveryDate());
     setComment("");
@@ -234,7 +236,7 @@ export default function NewReceiptPage() {
           <KemkvittoLogo color="white" size="sm" />
           <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>/</span>
           <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem", fontWeight: 600 }}>
-            {session.user?.name}
+            {businessName || session.user?.name}
           </span>
         </div>
         <div className="pos-header-nav">

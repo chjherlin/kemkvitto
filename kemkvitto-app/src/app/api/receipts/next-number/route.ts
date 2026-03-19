@@ -21,7 +21,7 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("washers")
-    .select("next_receipt_number, brand_color, price_list, garment_list, service_list")
+    .select("next_receipt_number, brand_color, price_list, garment_list, service_list, business_name")
     .eq("id", washerId)
     .single();
 
@@ -29,17 +29,19 @@ export async function GET() {
   if (error?.code === "PGRST204" || error?.code === "42703") {
     const fallback = await supabase
       .from("washers")
-      .select("next_receipt_number")
+      .select("next_receipt_number, business_name")
       .eq("id", washerId)
       .single();
     data = fallback.data as typeof data;
   }
 
+  const d = data as Record<string, unknown>;
   return NextResponse.json({
-    nextReceiptNumber: data?.next_receipt_number ?? 1,
-    brandColor: (data as Record<string, unknown>)?.brand_color ?? "#0891b2",
-    priceList: (data as Record<string, unknown>)?.price_list ?? {},
-    garmentList: (((data as Record<string, unknown>)?.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
-    serviceList: ((data as Record<string, unknown>)?.service_list as string[] | null) ?? DEFAULT_SERVICES,
+    nextReceiptNumber: d?.next_receipt_number ?? 1,
+    brandColor: d?.brand_color ?? "#0891b2",
+    priceList: d?.price_list ?? {},
+    businessName: d?.business_name ?? "",
+    garmentList: ((d?.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
+    serviceList: (d?.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
 }

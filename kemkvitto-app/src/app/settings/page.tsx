@@ -110,6 +110,7 @@ export default function SettingsPage() {
   const [businessName, setBusinessName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
   const [resetNumber, setResetNumber] = useState<number | "">("");
   const [resetDone, setResetDone] = useState(false);
@@ -136,14 +137,20 @@ export default function SettingsPage() {
 
   async function handleSave() {
     setSaving(true);
-    await fetch("/api/settings", {
+    setSaveError("");
+    const res = await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brandColor, priceList, businessName, garmentList, serviceList }),
     });
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (res.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setSaveError(body.error || "Kunde inte spara. Försök igen.");
+    }
   }
 
   function setPrice(garment: string, value: string) {
@@ -218,6 +225,9 @@ export default function SettingsPage() {
           </h1>
           <div className="flex items-center gap-2">
             <LanguageToggle />
+            {saveError && (
+              <span className="text-xs font-medium" style={{ color: "var(--danger)" }}>{saveError}</span>
+            )}
             <button
               onClick={handleSave}
               disabled={saving}
