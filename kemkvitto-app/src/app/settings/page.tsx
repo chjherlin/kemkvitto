@@ -27,13 +27,16 @@ const ALL_GARMENTS = [
 ];
 
 const ALL_SERVICES = [
-  "Pressning", "Stärkning", "Vikning", "Express",
-];
+  { key: "service.pressning", dbKey: "Pressning" },
+  { key: "service.starkning", dbKey: "Stärkning" },
+  { key: "service.vikning", dbKey: "Vikning" },
+  { key: "service.express", dbKey: "Express" },
+] as const;
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, tGarment } = useI18n();
 
   const [brandColor, setBrandColor] = useState("#82C58A");
   const [priceList, setPriceList] = useState<Record<string, number>>({});
@@ -236,7 +239,7 @@ export default function SettingsPage() {
                 style={{ borderColor: "var(--border)" }}
               >
                 <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {garment}
+                  {tGarment(garment)}
                 </span>
                 <input
                   type="number"
@@ -263,19 +266,19 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ALL_SERVICES.map((service) => (
               <div
-                key={service}
+                key={service.dbKey}
                 className="flex items-center justify-between rounded-xl border-2 bg-white px-3 py-3"
                 style={{ borderColor: "var(--border)" }}
               >
                 <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {service}
+                  {t(service.key)}
                 </span>
                 <input
                   type="number"
                   min={0}
                   placeholder="—"
-                  value={priceList[service] || ""}
-                  onChange={(e) => setPrice(service, e.target.value)}
+                  value={priceList[service.dbKey] || ""}
+                  onChange={(e) => setPrice(service.dbKey, e.target.value)}
                   className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
                   style={{ borderColor: "var(--border)" }}
                 />
