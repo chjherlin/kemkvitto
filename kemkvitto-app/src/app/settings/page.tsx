@@ -352,7 +352,39 @@ export default function SettingsPage() {
           onAdd={() => addItem(serviceList, setServiceList)}
           onPriceChange={setPrice}
         />
-      </main>
-    </div>
+         <ItemListEditor
+        title={t("settings.servicePrices")}
+        list={serviceList}
+        setList={setServiceList}
+        isService
+        addLabel={t("settings.addService")}
+        priceList={priceList}
+        onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
+        onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
+        onAdd={() => addItem(serviceList, setServiceList)}
+        onPriceChange={setPrice}
+      />
+
+      {/* Legal */}
+      <section className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
+        <h2
+          className="mb-3 text-sm font-semibold uppercase tracking-wider"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Legal
+        </h2>
+        <div className="flex gap-4">
+          <Link href="/privacy" className="text-sm font-medium underline" style={{ color: "var(--text-muted)" }}>
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="text-sm font-medium underline" style={{ color: "var(--text-muted)" }}>
+            Terms of Service
+          </Link>
+        </div>
+      </section>
+
+    </main>
+  </div>
   );
 }
+   
