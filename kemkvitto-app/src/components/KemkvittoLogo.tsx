@@ -9,18 +9,7 @@ export default function KemkvittoLogo({
   color = "#0891b2",
   size = "md",
 }: KemkvittoLogoProps) {
-  // White variant: use the transparent PNG (exact brand asset, white pixels)
-  if (color === "white") {
-    const heights = { sm: 28, md: 40, lg: 60 };
-    const h = heights[size];
-    return (
-      <img
-        src="/kemkvitto-logo-white.png"
-        alt="kemkvitto"
-        style={{ display: "block", height: h, width: "auto" }}
-      />
-    );
-  }
+
 
   // Coloured variant: SVG icon + text, adapts to any brand color
   const sizes = {
