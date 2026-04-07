@@ -352,18 +352,6 @@ export default function SettingsPage() {
           onAdd={() => addItem(serviceList, setServiceList)}
           onPriceChange={setPrice}
         />
-         <ItemListEditor
-        title={t("settings.servicePrices")}
-        list={serviceList}
-        setList={setServiceList}
-        isService
-        addLabel={t("settings.addService")}
-        priceList={priceList}
-        onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
-        onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
-        onAdd={() => addItem(serviceList, setServiceList)}
-        onPriceChange={setPrice}
-      />
 
       {/* Legal */}
       <section className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
