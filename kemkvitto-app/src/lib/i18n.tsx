@@ -15,7 +15,6 @@ const translations = {
   "nav.back": { sv: "← Tillbaka", en: "← Back", da: "← Tilbage", no: "← Tilbake" },
 
   // Receipt creation
-  "receipt.paymentStatus": { sv: "Betalning", en: "Payment", da: "Betaling", no: "Betaling" },
   "receipt.garments": { sv: "Plagg", en: "Garments", da: "Beklædning", no: "Plagg" },
   "receipt.dates": { sv: "Datum", en: "Dates", da: "Datoer", no: "Datoer" },
   "receipt.dropOff": { sv: "Inlämnat", en: "Drop-off", da: "Indleveret", no: "Innlevert" },
@@ -29,19 +28,12 @@ const translations = {
   "receipt.items": { sv: "plagg", en: "items", da: "stk", no: "stk" },
   "receipt.noItems": { sv: "Välj plagg till vänster", en: "Select garments on the left", da: "Vælg beklædning til venstre", no: "Velg plagg til venstre" },
 
-  // Treatment modes
-  "treatment.bet": { sv: "Bet", en: "Paid", da: "Betalt", no: "Betalt" },
-  "treatment.ejBet": { sv: "Ej Bet", en: "Not paid", da: "Ikke betalt", no: "Ikke betalt" },
-
   // Receipts list
   "receipts.title": { sv: "Kvitton", en: "Receipts", da: "Kvitteringer", no: "Kvitteringer" },
   "receipts.empty": { sv: "Inga kvitton ännu", en: "No receipts yet", da: "Ingen kvitteringer endnu", no: "Ingen kvitteringer enna" },
   "receipts.today": { sv: "Idag", en: "Today", da: "I dag", no: "I dag" },
   "receipts.sortDate": { sv: "Datum", en: "Date", da: "Dato", no: "Dato" },
   "receipts.sortNumber": { sv: "Nummer", en: "Number", da: "Nummer", no: "Nummer" },
-  "receipts.paid": { sv: "Betald", en: "Paid", da: "Betalt", no: "Betalt" },
-  "receipts.unpaid": { sv: "Obetald", en: "Unpaid", da: "Ubetalt", no: "Ubetalt" },
-  "receipts.failed": { sv: "Misslyckad", en: "Failed", da: "Mislykket", no: "Mislykket" },
   "receipts.search": { sv: "Sök kvitto...", en: "Search receipt...", da: "Søg kvittering...", no: "Søk kvittering..." },
   "receipts.noResults": { sv: "Inga kvitton matchar sökningen", en: "No receipts match the search", da: "Ingen kvitteringer matcher søgningen", no: "Ingen kvitteringer matcher søket" },
 
@@ -78,21 +70,6 @@ const translations = {
   "email.submitting": { sv: "Skickar...", en: "Sending...", da: "Sender...", no: "Sender..." },
   "email.thanks": { sv: "Tack!", en: "Thank you!", da: "Tak!", no: "Takk!" },
   "email.sent": { sv: "Kvittot skickas till din e-post", en: "The receipt will be sent to your email", da: "Kvitteringen sendes til din e-mail", no: "Kvitteringen sendes til din e-post" },
-
-  // Payment
-  "payment.title": { sv: "Betalning", en: "Payment", da: "Betaling", no: "Betaling" },
-  "payment.subtitle": { sv: "Betala ditt kvitto", en: "Pay your receipt", da: "Betal din kvittering", no: "Betal din kvittering" },
-  "payment.receipt": { sv: "Kvitto", en: "Receipt", da: "Kvittering", no: "Kvittering" },
-  "payment.total": { sv: "Totalt", en: "Total", da: "Total", no: "Totalt" },
-  "payment.pay": { sv: "Betala", en: "Pay", da: "Betal", no: "Betal" },
-  "payment.paying": { sv: "Bearbetar...", en: "Processing...", da: "Behandler...", no: "Behandler..." },
-  "payment.success": { sv: "Betalningen lyckades!", en: "Payment successful!", da: "Betalingen lykkedes!", no: "Betalingen var vellykket!" },
-  "payment.successSub": { sv: "Tack för din betalning", en: "Thank you for your payment", da: "Tak for din betaling", no: "Takk for din betaling" },
-  "payment.failed": { sv: "Betalningen misslyckades", en: "Payment failed", da: "Betalingen mislykkedes", no: "Betalingen mislyktes" },
-  "payment.failedSub": { sv: "Försök igen eller kontakta butiken", en: "Please try again or contact the store", da: "Prøv igen eller kontakt butikken", no: "Prøv igjen eller kontakt butikken" },
-  "payment.tryAgain": { sv: "Försök igen", en: "Try again", da: "Prøv igen", no: "Prøv igjen" },
-  "payment.alreadyPaid": { sv: "Detta kvitto är redan betalt", en: "This receipt has already been paid", da: "Denne kvittering er allerede betalt", no: "Denne kvitteringen er allerede betalt" },
-  "payment.expired": { sv: "Betalningslänken har gått ut", en: "This payment link has expired", da: "Betalingslinket er udløbet", no: "Betalingslenken har utløpt" },
 
   // Login / Register
   "auth.login": { sv: "Logga in", en: "Log in", da: "Log ind", no: "Logg inn" },
@@ -139,18 +116,6 @@ const translations = {
   "order.successEmailSent": { sv: "Kvitto skickat till kund via e-post", en: "Receipt sent to customer via email", da: "Kvittering sendt til kunde via e-mail", no: "Kvittering sendt til kunde via e-post" },
   "order.successNoEmail": { sv: "Kvitto sparat (ingen e-post angiven)", en: "Receipt saved (no email provided)", da: "Kvittering gemt (ingen e-mail angivet)", no: "Kvittering lagret (ingen e-post oppgitt)" },
   "order.newReceipt": { sv: "Nytt kvitto", en: "New receipt", da: "Ny kvittering", no: "Ny kvittering" },
-
-  // Treatment
-  "treatment.betLabel": { sv: "Bet", en: "Paid", da: "Betalt", no: "Betalt" },
-  "treatment.ejBetLabel": { sv: "Ej Bet", en: "Not paid", da: "Ikke betalt", no: "Ikke betalt" },
-  "treatment.betSub": { sv: "Betald vid inlämning", en: "Paid at drop-off", da: "Betalt ved indlevering", no: "Betalt ved innlevering" },
-  "treatment.ejBetSub": { sv: "Betalar vid hämtning", en: "Pays at pickup", da: "Betaler ved afhentning", no: "Betaler ved henting" },
-
-  // Payment status
-  "payment.betald": { sv: "Betald", en: "Paid", da: "Betalt", no: "Betalt" },
-  "payment.ejBetald": { sv: "Ej Betald", en: "Not Paid", da: "Ikke betalt", no: "Ikke betalt" },
-  "payment.betaldSub": { sv: "Betalat vid inlämning", en: "Paid at drop-off", da: "Betalt ved indlevering", no: "Betalt ved innlevering" },
-  "payment.ejBetaldSub": { sv: "Betalar vid hämtning", en: "Pays at pickup", da: "Betaler ved afhentning", no: "Betaler ved henting" },
 
   // Services
   "receipt.services": { sv: "Tjänster", en: "Services", da: "Tjenester", no: "Tjenester" },

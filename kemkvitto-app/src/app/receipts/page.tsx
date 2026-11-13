@@ -19,7 +19,6 @@ interface Receipt {
   customer_phone: string | null;
   comment: string | null;
   created_at: string;
-  payment_status: string;
   amount_total: number;
   paid?: boolean;
   services?: string[];
@@ -512,17 +511,6 @@ export default function ReceiptsPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {r.amount_total > 0 && (
-                            <span
-                              className="rounded-full px-2 py-0.5 text-xs font-bold"
-                              style={{
-                                backgroundColor: r.payment_status === "paid" ? "#dcfce7" : r.payment_status === "failed" ? "#fef2f2" : "#fef9c3",
-                                color: r.payment_status === "paid" ? "#16a34a" : r.payment_status === "failed" ? "#dc2626" : "#ca8a04",
-                              }}
-                            >
-                              {r.payment_status === "paid" ? t("receipts.paid") : r.payment_status === "failed" ? t("receipts.failed") : t("receipts.unpaid")}
-                            </span>
-                          )}
                           <span className="font-receipt text-sm" style={{ color: "var(--text-light)" }}>
                             {r.delivery_date}
                           </span>
