@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
+import { pricesEnabled } from "@/lib/prices";
 
 interface Receipt {
   id: string;
@@ -34,12 +35,13 @@ interface EditModalProps {
   brandColor: string;
   garmentList: string[];
   priceList: Record<string, number>;
+  showPrices: boolean;
   onSave: (updated: Partial<Receipt>) => Promise<boolean>;
   onDelete: () => void;
   onClose: () => void;
 }
 
-function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDelete, onClose }: EditModalProps) {
+function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, onSave, onDelete, onClose }: EditModalProps) {
   const { t, tGarment } = useI18n();
   const [garments, setGarments] = useState<Record<string, number>>(() => {
     const g: Record<string, number> = {};
@@ -193,7 +195,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDele
                   }}
                 >
                   {active && "✓ "}{t(`service.${svc}` as Parameters<typeof t>[0])}
-                  {priceList[svcNameMap[svc]] ? ` ${priceList[svcNameMap[svc]]} kr` : ""}
+                  {showPrices && priceList[svcNameMap[svc]] ? ` ${priceList[svcNameMap[svc]]} kr` : ""}
                 </button>
               );
             })}
@@ -249,7 +251,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, onSave, onDele
         </div>
 
         {/* Total */}
-        {grandTotal > 0 && (
+        {showPrices && grandTotal > 0 && (
           <div style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
             Totalt: <span style={{ fontWeight: 700, color: brandColor }}>{grandTotal} kr</span>
           </div>
@@ -307,6 +309,7 @@ export default function ReceiptsPage() {
   const [sortBy, setSortBy] = useState<"date" | "number">("date");
   const [brandColor, setBrandColor] = useState("#82C58A");
   const [priceList, setPriceList] = useState<Record<string, number>>({});
+  const showPrices = pricesEnabled(priceList);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
@@ -512,7 +515,7 @@ export default function ReceiptsPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {r.amount_total > 0 && (
+                          {showPrices && r.amount_total > 0 && (
                             <span
                               className="rounded-full px-2 py-0.5 text-xs font-bold"
                               style={{
@@ -575,6 +578,7 @@ export default function ReceiptsPage() {
           brandColor={brandColor}
           garmentList={garmentList}
           priceList={priceList}
+          showPrices={showPrices}
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={() => setEditingReceipt(null)}

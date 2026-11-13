@@ -49,6 +49,13 @@ const translations = {
   "settings.title": { sv: "Inställningar", en: "Settings", da: "Indstillinger", no: "Innstillinger" },
   "settings.businessName": { sv: "Företagsnamn", en: "Business name", da: "Virksomhedsnavn", no: "Bedriftsnavn" },
   "settings.brandColor": { sv: "Kvittofärg", en: "Receipt color", da: "Kvitteringsfarve", no: "Kvitteringsfarge" },
+  "settings.usePrices": { sv: "Använd priser", en: "Use prices", da: "Brug priser", no: "Bruk priser" },
+  "settings.usePricesHint": {
+    sv: "Avstängt döljer priser överallt. Siffrorna du har skrivit in sparas.",
+    en: "Off hides prices everywhere. The amounts you entered are kept.",
+    da: "Slået fra skjuler priser overalt. De beløb, du har skrevet, gemmes.",
+    no: "Av skrur av priser overalt. Tallene du har skrevet inn, blir lagret.",
+  },
   "settings.priceList": { sv: "Prislista (kr)", en: "Price list (kr)", da: "Prisliste (kr)", no: "Prisliste (kr)" },
   "settings.servicePrices": { sv: "Tjänstpriser (kr)", en: "Service prices (kr)", da: "Servicepriser (kr)", no: "Tjenestepriser (kr)" },
   "settings.save": { sv: "Spara", en: "Save", da: "Gem", no: "Lagre" },

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { generateReceiptPDF } from "./pdf";
+import { pricesEnabled } from "./prices";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -55,7 +56,8 @@ function buildReceiptHTML(
   washer: WasherInfo,
   lines: { name: string; qty: number; bet: boolean; unitPrice: number }[],
   total: number,
-  paymentUrl: string | null
+  paymentUrl: string | null,
+  showPrices: boolean
 ): string {
   const brandColor = washer.brand_color || "#82C58A";
   const vatAmount = Math.round(total * 0.25 / 1.25);
@@ -63,6 +65,12 @@ function buildReceiptHTML(
   const lineRows = lines
     .map((l) => {
       const lineTotal = l.qty * l.unitPrice;
+      if (!showPrices) {
+        return `<tr>
+        <td style="padding:4px 0;color:#1c1917;font-size:14px;">${l.name}</td>
+        <td style="padding:4px 0;text-align:center;color:#78716c;font-size:14px;">${l.qty}</td>
+      </tr>`;
+      }
       return `<tr>
         <td style="padding:4px 0;color:#1c1917;font-size:14px;">${l.name}</td>
         <td style="padding:4px 0;text-align:center;color:#78716c;font-size:14px;">${l.qty}</td>
@@ -116,11 +124,11 @@ function buildReceiptHTML(
           }).join(", ")}</p>
         </td></tr>` : ""}
 
-        <tr><td style="padding:8px 24px 0;">
+        ${showPrices ? `<tr><td style="padding:8px 24px 0;">
           <p style="margin:0;color:${receipt.paid ? '#16a34a' : '#ca8a04'};font-size:12px;font-weight:600;">
             ${receipt.paid ? '\u2713 Betald' : 'Ej betald \u2014 betalas vid hämtning'}
           </p>
-        </td></tr>
+        </td></tr>` : ""}
 
         <!-- Divider -->
         <tr><td style="padding:16px 24px 0;">
@@ -133,14 +141,14 @@ function buildReceiptHTML(
             <tr>
               <td style="padding:4px 0;color:#a8a29e;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Plagg</td>
               <td style="padding:4px 0;text-align:center;color:#a8a29e;font-size:11px;text-transform:uppercase;">Ant</td>
-              <td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Pris</td>
-              <td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Summa</td>
+              ${showPrices ? `<td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Pris</td>
+              <td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Summa</td>` : ""}
             </tr>
             ${lineRows}
           </table>
         </td></tr>
 
-        <!-- Total -->
+        ${showPrices ? `<!-- Total -->
         <tr><td style="padding:16px 24px 0;">
           <hr style="border:none;border-top:2px solid #e7e5e4;margin:0 0 12px;">
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -152,7 +160,7 @@ function buildReceiptHTML(
               <td colspan="2" style="color:#a8a29e;font-size:11px;padding-top:4px;">varav moms (25%): ${vatAmount} kr</td>
             </tr>
           </table>
-        </td></tr>
+        </td></tr>` : ""}
 
         ${receipt.comment ? `
         <!-- Comment -->
@@ -187,13 +195,14 @@ export async function sendReceiptEmail(
   washer?: WasherInfo
 ): Promise<void> {
   const priceList = washer?.price_list ?? {};
+  const showPrices = pricesEnabled(priceList);
   const lines = parseGarmentLines(receipt.garments, priceList);
   const total = receipt.amount_total
     ? receipt.amount_total / 100
     : calculateTotal(lines);
 
   const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
+    showPrices && receipt.amount_total && receipt.amount_total > 0
       ? getPaymentUrl(receipt.id)
       : null;
 
@@ -204,7 +213,7 @@ export async function sendReceiptEmail(
     business_name: businessName,
     brand_color: brandColor,
     price_list: priceList,
-  }, lines, total, paymentUrl);
+  }, lines, total, paymentUrl, showPrices);
 
   // Generate PDF
   const pdfBuffer = generateReceiptPDF({
@@ -224,6 +233,7 @@ export async function sendReceiptEmail(
     paymentUrl,
     paid: receipt.paid,
     services: receipt.services,
+    showPrices,
   });
 
   if (resend) {
@@ -261,6 +271,7 @@ export async function sendReminderEmail(
   washer?: WasherInfo
 ): Promise<void> {
   const priceList = washer?.price_list ?? {};
+  const showPrices = pricesEnabled(priceList);
   const lines = parseGarmentLines(receipt.garments, priceList);
   const total = receipt.amount_total
     ? receipt.amount_total / 100
@@ -270,7 +281,7 @@ export async function sendReminderEmail(
   const brandColor = washer?.brand_color ?? "#82C58A";
 
   const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
+    showPrices && receipt.amount_total && receipt.amount_total > 0
       ? getPaymentUrl(receipt.id)
       : null;
 
@@ -279,7 +290,8 @@ export async function sendReminderEmail(
     { business_name: businessName, brand_color: brandColor, price_list: priceList },
     lines,
     total,
-    paymentUrl
+    paymentUrl,
+    showPrices
   );
 
   const reminderBanner = `
@@ -317,6 +329,7 @@ export async function sendDateUpdateEmail(
   washer?: WasherInfo
 ): Promise<void> {
   const priceList = washer?.price_list ?? {};
+  const showPrices = pricesEnabled(priceList);
   const lines = parseGarmentLines(receipt.garments, priceList);
   const total = receipt.amount_total
     ? receipt.amount_total / 100
@@ -327,7 +340,7 @@ export async function sendDateUpdateEmail(
   const isSooner = newDate < oldDate;
 
   const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
+    showPrices && receipt.amount_total && receipt.amount_total > 0
       ? getPaymentUrl(receipt.id)
       : null;
 
@@ -337,7 +350,8 @@ export async function sendDateUpdateEmail(
     { business_name: businessName, brand_color: brandColor, price_list: priceList },
     lines,
     total,
-    paymentUrl
+    paymentUrl,
+    showPrices
   );
 
   const banner = isSooner
