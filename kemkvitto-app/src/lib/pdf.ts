@@ -21,8 +21,6 @@ interface ReceiptPDFData {
   betPrice: number;
   totalAmount: number; // in kr
   comment: string | null;
-  paymentUrl: string | null;
-  paid?: boolean;
   services?: string[];
 }
 
@@ -99,18 +97,6 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
     y += 4;
   }
 
-  // --- Payment status ---
-  if (data.paid) {
-    doc.setFontSize(7);
-    doc.setTextColor(22, 163, 74); // green
-    doc.text("\u2713 Betald", margin, y);
-  } else {
-    doc.setFontSize(7);
-    doc.setTextColor(202, 138, 4); // amber
-    doc.text("Ej betald", margin, y);
-  }
-  y += 4;
-
   // --- Divider ---
   doc.line(margin, y, pageWidth - margin, y);
   y += 4;
@@ -176,23 +162,6 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
     y += commentLines.length * 3.5 + 2;
   }
 
-  // --- Payment link ---
-  if (data.paymentUrl) {
-    y += 2;
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 4;
-    doc.setFontSize(7);
-    doc.setTextColor(brand[0], brand[1], brand[2]);
-    doc.text("Betala h\u00e4r:", margin, y);
-    y += 3.5;
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(6);
-    const urlLines = doc.splitTextToSize(data.paymentUrl, contentWidth);
-    doc.text(urlLines, margin, y);
-    y += urlLines.length * 3 + 2;
-  }
-
   // --- Footer ---
   y += 3;
   doc.setFontSize(7);
@@ -255,18 +224,6 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
     y += 4;
   }
 
-  // --- Payment status ---
-  if (data.paid) {
-    doc.setFontSize(7);
-    doc.setTextColor(22, 163, 74); // green
-    doc.text("\u2713 Betald", margin, y);
-  } else {
-    doc.setFontSize(7);
-    doc.setTextColor(202, 138, 4); // amber
-    doc.text("Ej betald", margin, y);
-  }
-  y += 4;
-
   doc.line(margin, y, pageWidth - margin, y);
   y += 4;
 
@@ -323,20 +280,6 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
     const commentLines = doc.splitTextToSize(data.comment, contentWidth);
     doc.text(commentLines, margin, y);
     y += commentLines.length * 3.5 + 2;
-  }
-
-  if (data.paymentUrl) {
-    y += 2;
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 4;
-    doc.setFontSize(7);
-    doc.setTextColor(brand[0], brand[1], brand[2]);
-    doc.text("Betala h\u00e4r:", margin, y);
-    y += 3.5;
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(6);
-    const urlLines = doc.splitTextToSize(data.paymentUrl, contentWidth);
-    doc.text(urlLines, margin, y);
   }
 
   return doc.output("arraybuffer");

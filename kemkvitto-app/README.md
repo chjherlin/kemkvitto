@@ -1,6 +1,6 @@
 # Kemkvitto
 
-Digital receipt system for Swedish dry cleaners. Customers get a PDF receipt by email with a link to track when their clothes are ready and pay online.
+Digital receipt system for Swedish dry cleaners. Customers get a PDF receipt by email. They pay at the laundry's own till, not in Kemkvitto.
 
 Built by [Parallaxintel.xyz](https://parallaxintel.xyz).
 
@@ -9,7 +9,7 @@ Built by [Parallaxintel.xyz](https://parallaxintel.xyz).
 ## What it does
 
 - **POS screen** — the dry cleaner logs what garments came in, sets a pickup date, and sends a receipt to the customer's email
-- **Customer receipt page** — a public page (no login required) where the customer can see their receipt and pay
+- **Customer email** — the receipt is emailed to the customer. There is no in-app payment page.
 - **Settings** — the cleaner configures their business name, brand colour, and garment/service price list
 - **Reminders** — a daily cron job emails customers the day before their pickup
 
@@ -21,7 +21,7 @@ Built by [Parallaxintel.xyz](https://parallaxintel.xyz).
 | Database | Supabase (Postgres) |
 | Auth | NextAuth.js 4 (JWT, bcrypt) |
 | Email | Resend |
-| Payments | Stripe (SEK, Swish) |
+| Payments | Stripe is kept for a later laundry subscription. Customers do not pay in the app. |
 | PDF | jsPDF |
 | Styles | Tailwind CSS 4 |
 | Deployment | Docker on a self-hosted box |
@@ -115,15 +115,12 @@ kemkvitto-app/
 │   │   ├── page.tsx              # Main POS screen (create receipts)
 │   │   ├── receipts/page.tsx     # Receipt history list
 │   │   ├── settings/page.tsx     # Business settings
-│   │   ├── pay/[id]/page.tsx     # Public payment page (no auth)
 │   │   ├── login/page.tsx
 │   │   ├── register/page.tsx
 │   │   └── api/
 │   │       ├── auth/             # NextAuth + register endpoint
-│   │       ├── receipts/         # CRUD, list, email, payment status
-│   │       ├── pay/              # Public payment info endpoint
-│   │       ├── payments/         # Stripe intent creation
-│   │       ├── webhooks/stripe/  # Stripe webhook handler
+│   │       ├── receipts/         # CRUD, list, email
+│   │       ├── webhooks/stripe/  # Kept for a later laundry subscription
 │   │       ├── settings/         # Washer settings GET/PUT
 │   │       ├── customers/        # Customer autocomplete
 │   │       └── cron/reminders/   # Daily reminder cron
@@ -134,7 +131,6 @@ kemkvitto-app/
 │   │   ├── CustomerSearch.tsx    # Autocomplete search
 │   │   ├── CustomerEmailForm.tsx # Email input with send button
 │   │   ├── BottomBar.tsx         # Save/total bar at bottom
-│   │   ├── TreatmentModeBar.tsx  # Bet/Ej Bet toggle
 │   │   ├── KemkvittoLogo.tsx     # SVG logo component
 │   │   └── LanguageToggle.tsx    # SV/EN toggle
 │   └── lib/
@@ -160,7 +156,7 @@ kemkvitto-app/
 
 **receipts** — one row per customer drop-off
 - `garments` — JSONB: `{ "Kostym": { qty: 1, bet: true }, ... }`
-- `payment_status` — `"pending" | "paid" | "failed" | "expired"`
+- `amount_total` — optional price total in öre. Customers do not pay it in the app.
 - `receipt_number` — TEXT (supports `"A-001"` style prefixes)
 - `reminder_sent` — boolean, set true after reminder email fires
 

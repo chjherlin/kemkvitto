@@ -19,7 +19,6 @@ interface Receipt {
   drop_off_date?: string | null;
   comment: string | null;
   amount_total?: number;
-  paid?: boolean;
   services?: string[];
 }
 
@@ -27,11 +26,6 @@ interface WasherInfo {
   business_name: string;
   brand_color: string;
   price_list: Record<string, number>;
-}
-
-export function getPaymentUrl(receiptId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  return `${baseUrl}/pay/${receiptId}`;
 }
 
 function parseGarmentLines(
@@ -54,8 +48,7 @@ function buildReceiptHTML(
   receipt: Receipt,
   washer: WasherInfo,
   lines: { name: string; qty: number; bet: boolean; unitPrice: number }[],
-  total: number,
-  paymentUrl: string | null
+  total: number
 ): string {
   const brandColor = washer.brand_color || "#82C58A";
   const vatAmount = Math.round(total * 0.25 / 1.25);
@@ -116,12 +109,6 @@ function buildReceiptHTML(
           }).join(", ")}</p>
         </td></tr>` : ""}
 
-        <tr><td style="padding:8px 24px 0;">
-          <p style="margin:0;color:${receipt.paid ? '#16a34a' : '#ca8a04'};font-size:12px;font-weight:600;">
-            ${receipt.paid ? '\u2713 Betald' : 'Ej betald \u2014 betalas vid hämtning'}
-          </p>
-        </td></tr>
-
         <!-- Divider -->
         <tr><td style="padding:16px 24px 0;">
           <hr style="border:none;border-top:1px solid #e7e5e4;margin:0;">
@@ -162,14 +149,6 @@ function buildReceiptHTML(
           <p style="margin:4px 0 0;color:#78716c;font-size:13px;">${receipt.comment}</p>
         </td></tr>` : ""}
 
-        ${paymentUrl ? `
-        <!-- Payment button -->
-        <tr><td style="padding:20px 24px 0;">
-          <a href="${paymentUrl}" style="display:block;background:${brandColor};color:#ffffff;text-align:center;padding:14px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;">
-            Betala ${total} kr
-          </a>
-        </td></tr>` : ""}
-
         <!-- Footer -->
         <tr><td style="padding:20px 24px 24px;">
           <p style="margin:0;color:#d6d3d1;font-size:12px;text-align:center;">Tack för ditt besök!</p>
@@ -192,11 +171,6 @@ export async function sendReceiptEmail(
     ? receipt.amount_total / 100
     : calculateTotal(lines);
 
-  const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
-      ? getPaymentUrl(receipt.id)
-      : null;
-
   const businessName = washer?.business_name ?? "Kemtvätt";
   const brandColor = washer?.brand_color ?? "#82C58A";
 
@@ -204,7 +178,7 @@ export async function sendReceiptEmail(
     business_name: businessName,
     brand_color: brandColor,
     price_list: priceList,
-  }, lines, total, paymentUrl);
+  }, lines, total);
 
   // Generate PDF
   const pdfBuffer = generateReceiptPDF({
@@ -221,8 +195,6 @@ export async function sendReceiptEmail(
     betPrice: 0,
     totalAmount: total,
     comment: receipt.comment,
-    paymentUrl,
-    paid: receipt.paid,
     services: receipt.services,
   });
 
@@ -250,7 +222,6 @@ export async function sendReceiptEmail(
     console.log(`Subject: Kvitto #${receipt.receipt_number} — ${businessName}`);
     console.log(`Garments: ${lines.map((l) => `${l.name} x${l.qty}`).join(", ")}`);
     console.log(`Total: ${total} kr`);
-    if (paymentUrl) console.log(`Payment link: ${paymentUrl}`);
     console.log(`PDF: ${pdfBuffer.length} bytes generated`);
     console.log("=====================================");
   }
@@ -269,17 +240,11 @@ export async function sendReminderEmail(
   const businessName = washer?.business_name ?? "Kemtvätt";
   const brandColor = washer?.brand_color ?? "#82C58A";
 
-  const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
-      ? getPaymentUrl(receipt.id)
-      : null;
-
   const fullHtml = buildReceiptHTML(
     receipt,
     { business_name: businessName, brand_color: brandColor, price_list: priceList },
     lines,
-    total,
-    paymentUrl
+    total
   );
 
   const reminderBanner = `
@@ -326,18 +291,12 @@ export async function sendDateUpdateEmail(
   const brandColor = washer?.brand_color ?? "#82C58A";
   const isSooner = newDate < oldDate;
 
-  const paymentUrl =
-    receipt.amount_total && receipt.amount_total > 0
-      ? getPaymentUrl(receipt.id)
-      : null;
-
   const updatedReceipt = { ...receipt, delivery_date: newDate };
   const fullHtml = buildReceiptHTML(
     updatedReceipt,
     { business_name: businessName, brand_color: brandColor, price_list: priceList },
     lines,
-    total,
-    paymentUrl
+    total
   );
 
   const banner = isSooner

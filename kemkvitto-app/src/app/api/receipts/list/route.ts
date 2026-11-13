@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase";
 
 // Full select — includes optional `services` column (migration not applied on all envs)
 const FULL_SELECT =
-  "id, receipt_number, tag_number, garments, delivery_date, drop_off_date, customer_email, customer_name, customer_phone, comment, created_at, payment_status, amount_total, services";
+  "id, receipt_number, tag_number, garments, delivery_date, drop_off_date, customer_email, customer_name, customer_phone, comment, created_at, amount_total, services";
 
 // Base select with only migration 001 columns
 const BASE_SELECT =
