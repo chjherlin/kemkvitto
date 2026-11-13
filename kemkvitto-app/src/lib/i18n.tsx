@@ -114,6 +114,12 @@ const translations = {
   "auth.registering": { sv: "Registrerar...", en: "Registering...", da: "Registrerer...", no: "Registrerer..." },
   "auth.loginError": { sv: "Fel e-post eller lösenord", en: "Wrong email or password", da: "Forkert e-mail eller adgangskode", no: "Feil e-post eller passord" },
   "auth.registerError": { sv: "Registrering misslyckades", en: "Registration failed", da: "Registrering mislykkedes", no: "Registrering mislyktes" },
+  "auth.accountCreated": {
+    sv: "Kontot är skapat. Logga in med din e-post och ditt lösenord.",
+    en: "Your account has been created. Log in with your email and password.",
+    da: "Kontoen er oprettet. Log ind med din e-mail og din adgangskode.",
+    no: "Kontoen er opprettet. Logg inn med e-posten din og passordet ditt.",
+  },
   "auth.passwordPlaceholder": { sv: "Lösenord", en: "Password", da: "Adgangskode", no: "Passord" },
   "auth.passwordMinLength": { sv: "Lösenord (minst 6 tecken)", en: "Password (min 6 characters)", da: "Adgangskode (mindst 6 tegn)", no: "Passord (minst 6 tegn)" },
 

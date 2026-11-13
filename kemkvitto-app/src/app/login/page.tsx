@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
@@ -15,6 +15,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("registered") !== "1") return;
+    setJustRegistered(true);
+    try {
+      const stored = sessionStorage.getItem("kemkvitto-pending-login-email");
+      sessionStorage.removeItem("kemkvitto-pending-login-email");
+      if (stored && /^[^\s@]+@[^\s@]+$/.test(stored)) setEmail(stored);
+    } catch {
+      // The confirmation still shows without a prefilled address.
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +70,15 @@ export default function LoginPage() {
       {/* Form area */}
       <div className="flex flex-1 items-start justify-center px-4 pt-10">
         <div className="animate-fade-up w-full max-w-sm space-y-4">
+          {justRegistered && !error && (
+            <p
+              role="status"
+              className="rounded-xl p-4 text-center text-sm font-medium"
+              style={{ backgroundColor: "#f0fdf4", color: "#14532d" }}
+            >
+              {t("auth.accountCreated")}
+            </p>
+          )}
           {error && (
             <p className="rounded-xl bg-red-50 p-4 text-center text-sm font-medium text-red-600">
               {error}
