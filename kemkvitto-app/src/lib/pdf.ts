@@ -24,6 +24,7 @@ interface ReceiptPDFData {
   paymentUrl: string | null;
   paid?: boolean;
   services?: string[];
+  showPrices?: boolean;
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -36,6 +37,7 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
+  const showPrices = data.showPrices !== false;
   const doc = new jsPDF({ unit: "mm", format: [80, 200] }); // receipt-width paper
   const brand = hexToRgb(data.brandColor);
   const pageWidth = 80;
@@ -99,17 +101,18 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
     y += 4;
   }
 
-  // --- Payment status ---
-  if (data.paid) {
-    doc.setFontSize(7);
-    doc.setTextColor(22, 163, 74); // green
-    doc.text("\u2713 Betald", margin, y);
-  } else {
-    doc.setFontSize(7);
-    doc.setTextColor(202, 138, 4); // amber
-    doc.text("Ej betald", margin, y);
+  if (showPrices) {
+    if (data.paid) {
+      doc.setFontSize(7);
+      doc.setTextColor(22, 163, 74);
+      doc.text("\u2713 Betald", margin, y);
+    } else {
+      doc.setFontSize(7);
+      doc.setTextColor(202, 138, 4);
+      doc.text("Ej betald", margin, y);
+    }
+    y += 4;
   }
-  y += 4;
 
   // --- Divider ---
   doc.line(margin, y, pageWidth - margin, y);
@@ -121,8 +124,10 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
   doc.setTextColor(130, 130, 130);
   doc.text("PLAGG", margin, y);
   doc.text("ANT", margin + contentWidth * 0.55, y, { align: "right" });
-  doc.text("PRIS", margin + contentWidth * 0.75, y, { align: "right" });
-  doc.text("SUMMA", margin + contentWidth, y, { align: "right" });
+  if (showPrices) {
+    doc.text("PRIS", margin + contentWidth * 0.75, y, { align: "right" });
+    doc.text("SUMMA", margin + contentWidth, y, { align: "right" });
+  }
   y += 4;
 
   // --- Line items ---
@@ -135,31 +140,33 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
     const displayName = line.name;
     doc.text(displayName, margin, y);
     doc.text(String(line.qty), margin + contentWidth * 0.55, y, { align: "right" });
-    doc.text(`${line.unitPrice}`, margin + contentWidth * 0.75, y, { align: "right" });
-    doc.text(`${lineTotal}`, margin + contentWidth, y, { align: "right" });
+    if (showPrices) {
+      doc.text(`${line.unitPrice}`, margin + contentWidth * 0.75, y, { align: "right" });
+      doc.text(`${lineTotal}`, margin + contentWidth, y, { align: "right" });
+    }
     y += 4;
   }
 
-  // --- Total ---
-  y += 1;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 5;
+  if (showPrices) {
+    y += 1;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
 
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(brand[0], brand[1], brand[2]);
-  doc.text("TOTALT", margin, y);
-  doc.text(`${data.totalAmount} kr`, margin + contentWidth, y, { align: "right" });
-  y += 4;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(brand[0], brand[1], brand[2]);
+    doc.text("TOTALT", margin, y);
+    doc.text(`${data.totalAmount} kr`, margin + contentWidth, y, { align: "right" });
+    y += 4;
 
-  // VAT
-  const vatAmount = Math.round(data.totalAmount * 0.25 / 1.25);
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(130, 130, 130);
-  doc.text(`varav moms (25%): ${vatAmount} kr`, margin, y);
-  y += 6;
+    const vatAmount = Math.round(data.totalAmount * 0.25 / 1.25);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(130, 130, 130);
+    doc.text(`varav moms (25%): ${vatAmount} kr`, margin, y);
+    y += 6;
+  }
 
   // --- Comment ---
   if (data.comment) {
@@ -177,7 +184,7 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
   }
 
   // --- Payment link ---
-  if (data.paymentUrl) {
+  if (showPrices && data.paymentUrl) {
     y += 2;
     doc.setDrawColor(200, 200, 200);
     doc.line(margin, y, pageWidth - margin, y);
@@ -209,6 +216,7 @@ export function generateReceiptPDF(data: ReceiptPDFData): Buffer {
 }
 
 function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
+  const showPrices = data.showPrices !== false;
   const doc = new jsPDF({ unit: "mm", format: [80, height] });
   const brand = hexToRgb(data.brandColor);
   const pageWidth = 80;
@@ -255,17 +263,18 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
     y += 4;
   }
 
-  // --- Payment status ---
-  if (data.paid) {
-    doc.setFontSize(7);
-    doc.setTextColor(22, 163, 74); // green
-    doc.text("\u2713 Betald", margin, y);
-  } else {
-    doc.setFontSize(7);
-    doc.setTextColor(202, 138, 4); // amber
-    doc.text("Ej betald", margin, y);
+  if (showPrices) {
+    if (data.paid) {
+      doc.setFontSize(7);
+      doc.setTextColor(22, 163, 74);
+      doc.text("\u2713 Betald", margin, y);
+    } else {
+      doc.setFontSize(7);
+      doc.setTextColor(202, 138, 4);
+      doc.text("Ej betald", margin, y);
+    }
+    y += 4;
   }
-  y += 4;
 
   doc.line(margin, y, pageWidth - margin, y);
   y += 4;
@@ -275,8 +284,10 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
   doc.setTextColor(130, 130, 130);
   doc.text("PLAGG", margin, y);
   doc.text("ANT", margin + contentWidth * 0.55, y, { align: "right" });
-  doc.text("PRIS", margin + contentWidth * 0.75, y, { align: "right" });
-  doc.text("SUMMA", margin + contentWidth, y, { align: "right" });
+  if (showPrices) {
+    doc.text("PRIS", margin + contentWidth * 0.75, y, { align: "right" });
+    doc.text("SUMMA", margin + contentWidth, y, { align: "right" });
+  }
   y += 4;
 
   doc.setFont("helvetica", "normal");
@@ -288,29 +299,33 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
     const displayName = line.name;
     doc.text(displayName, margin, y);
     doc.text(String(line.qty), margin + contentWidth * 0.55, y, { align: "right" });
-    doc.text(`${line.unitPrice}`, margin + contentWidth * 0.75, y, { align: "right" });
-    doc.text(`${lineTotal}`, margin + contentWidth, y, { align: "right" });
+    if (showPrices) {
+      doc.text(`${line.unitPrice}`, margin + contentWidth * 0.75, y, { align: "right" });
+      doc.text(`${lineTotal}`, margin + contentWidth, y, { align: "right" });
+    }
     y += 4;
   }
 
-  y += 1;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 5;
+  if (showPrices) {
+    y += 1;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
 
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(brand[0], brand[1], brand[2]);
-  doc.text("TOTALT", margin, y);
-  doc.text(`${data.totalAmount} kr`, margin + contentWidth, y, { align: "right" });
-  y += 4;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(brand[0], brand[1], brand[2]);
+    doc.text("TOTALT", margin, y);
+    doc.text(`${data.totalAmount} kr`, margin + contentWidth, y, { align: "right" });
+    y += 4;
 
-  const vatAmount = Math.round(data.totalAmount * 0.25 / 1.25);
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(130, 130, 130);
-  doc.text(`varav moms (25%): ${vatAmount} kr`, margin, y);
-  y += 6;
+    const vatAmount = Math.round(data.totalAmount * 0.25 / 1.25);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(130, 130, 130);
+    doc.text(`varav moms (25%): ${vatAmount} kr`, margin, y);
+    y += 6;
+  }
 
   if (data.comment) {
     doc.line(margin, y, pageWidth - margin, y);
@@ -325,7 +340,7 @@ function generateTrimmedPDF(data: ReceiptPDFData, height: number): ArrayBuffer {
     y += commentLines.length * 3.5 + 2;
   }
 
-  if (data.paymentUrl) {
+  if (showPrices && data.paymentUrl) {
     y += 2;
     doc.line(margin, y, pageWidth - margin, y);
     y += 4;

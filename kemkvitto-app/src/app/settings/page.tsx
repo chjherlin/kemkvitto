@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
+import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 
 const BRAND_COLORS = [
   "#82C58A", // grön (green)
@@ -27,6 +28,7 @@ function ItemListEditor({
   isService = false,
   addLabel,
   priceList,
+  showPrices,
   onRename,
   onRemove,
   onAdd,
@@ -38,6 +40,7 @@ function ItemListEditor({
   isService?: boolean;
   addLabel: string;
   priceList: Record<string, number>;
+  showPrices: boolean;
   onRename: (idx: number, newName: string) => void;
   onRemove: (idx: number) => void;
   onAdd: () => void;
@@ -66,17 +69,22 @@ function ItemListEditor({
               className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
               style={{ color: "var(--text)" }}
             />
-            <input
-              type="number"
-              min={0}
-              placeholder="—"
-              value={item ? (priceList[item] || "") : ""}
-              onChange={(e) => onPriceChange(item, e.target.value)}
-              disabled={!item}
-              className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
-              style={{ borderColor: "var(--border)" }}
-            />
-            <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+            {showPrices && (
+              <>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={item ? (priceList[item] || "") : ""}
+                  onChange={(e) => onPriceChange(item, e.target.value)}
+                  disabled={!item}
+                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
+                  style={{ borderColor: "var(--border)" }}
+                  aria-label={`${item} kr`}
+                />
+                <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+              </>
+            )}
             <button
               type="button"
               onClick={() => onRemove(idx)}
@@ -151,6 +159,17 @@ export default function SettingsPage() {
       const body = await res.json().catch(() => ({}));
       setSaveError(body.error || "Kunde inte spara. Försök igen.");
     }
+  }
+
+  const usePrices = pricesEnabled(priceList);
+
+  function setUsePrices(on: boolean) {
+    setPriceList((prev) => {
+      const next = { ...prev };
+      if (on) delete next[SHOW_PRICES_KEY];
+      else next[SHOW_PRICES_KEY] = 0;
+      return next;
+    });
   }
 
   function setPrice(garment: string, value: string) {
@@ -329,12 +348,43 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        <section>
+          <label
+            htmlFor="use-prices"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              minHeight: "48px",
+              cursor: "pointer",
+              color: "#1c1917",
+            }}
+          >
+            <input
+              id="use-prices"
+              type="checkbox"
+              role="switch"
+              aria-checked={usePrices}
+              checked={usePrices}
+              onChange={(e) => setUsePrices(e.target.checked)}
+              style={{ width: "44px", height: "44px", accentColor: "#14532d", flexShrink: 0 }}
+            />
+            <span>
+              <span style={{ display: "block", fontWeight: 700 }}>{t("settings.usePrices")}</span>
+              <span style={{ display: "block", fontSize: "0.875rem", color: "#44403c" }}>
+                {t("settings.usePricesHint")}
+              </span>
+            </span>
+          </label>
+        </section>
+
         <ItemListEditor
           title={t("settings.priceList")}
           list={garmentList}
           setList={setGarmentList}
           addLabel={t("settings.addGarment")}
           priceList={priceList}
+          showPrices={usePrices}
           onRename={(idx, name) => renameItem(garmentList, setGarmentList, idx, name)}
           onRemove={(idx) => removeItem(garmentList, setGarmentList, idx)}
           onAdd={() => addItem(garmentList, setGarmentList)}
@@ -347,6 +397,7 @@ export default function SettingsPage() {
           isService
           addLabel={t("settings.addService")}
           priceList={priceList}
+          showPrices={usePrices}
           onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
           onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
           onAdd={() => addItem(serviceList, setServiceList)}

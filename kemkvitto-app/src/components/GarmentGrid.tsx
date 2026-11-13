@@ -13,6 +13,7 @@ interface GarmentGridProps {
   priceList: Record<string, number>;
   brandColor: string;
   garmentList: string[];
+  showPrices?: boolean;
 }
 
 export default function GarmentGrid({
@@ -21,6 +22,7 @@ export default function GarmentGrid({
   priceList,
   brandColor,
   garmentList,
+  showPrices = true,
 }: GarmentGridProps) {
   const { tGarment } = useI18n();
   const [lastTapped, setLastTapped] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function GarmentGrid({
               }}
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
-              {price > 0 && (
+              {showPrices && price > 0 && (
                 <span className="pos-tile-price">{price} kr</span>
               )}
             </button>
