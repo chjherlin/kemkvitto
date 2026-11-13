@@ -518,3 +518,25 @@ Betalrutter, Stripe, `vercel.json`, `.github/workflows/` och RLS rörs inte i de
 Kört: läsning av `kemkvitto-app/src`, migreringar, README, workflow och `docs/superpowers`. Git-historik, 48 commits, med värden maskerade. `npm ci`, `tsc`, försök till lint, `next build`. Lokal `next start` med platshållare. Headless Chrome på de publika sidorna i storlekarna ovan. curl mot register, login, cron, webhook utan signatur, pay-info, create-intent, e-postrutten och kvittolistan utan cookie. Kontrast räknad från de tio hexkoderna.
 
 Inte kört: inloggad kassavy, kvittolista eller inställningar. Inget mot Supabase, Stripe, Resend eller Vercel. Ingen giltig webhook-signatur. Inget mejl. Ingen samtidig kvittonummerkörning mot en databas. Inget skärmtangentbord. Ingen riktig iPad. `node .next/standalone/server.js` är inte startad. Inga paket är uppgraderade och ingen SQL är körd.
+
+## Beslut 13 november 2026
+
+Kimmen har läst kartläggningen och beslutat följande. Koden för punkterna görs i senare pull requests. Undantaget är att `/privacy` och `/terms` öppnas utan inloggning i auth-fixen, eftersom Stripe behöver att de är publika.
+
+- Arbetsgrenen flyttas till master sist, efter att alla steg är klara och Preview är testad på en iPad. Boten slår då ihop den pull requesten själv.
+- Både brittisk och amerikansk engelska ska finnas, valda med små flaggor.
+- Spanska för Spanien och portugisiska för Portugal kommer först. Brasilien, Argentina och liknande kommer senare.
+- Kundens mejl använder tvätteriets språk. Ett val per kvitto kan komma senare.
+- Det finns inget femte språk. Språken är `sv`, `en`, `da` och `no`.
+- Betalflödet behöver en mer detaljerad genomgång innan något ändras där.
+- Kolumnerna `name` och `phone` behålls för framtiden. De får inte visas i mejl eller någon annanstans.
+- Ingen gräns på 500 kvitton nu. Integritetspolicyn säger att e-postadressen raderas efter 90 dagar. Koden har inget sådant raderingsjobb, se avsnitt 5. Ingen ändring för det i den här omgången.
+- Påminnelsen går på leveransdagen, svensk tid, och använder ordet "borde" på varje språk, eftersom det inte går att garantera att tvätten är klar.
+- +5 och +10 blir egna paket med egna priser.
+- "Spara kund" tas upp när ett testkonto fungerar.
+- `/privacy` och `/terms` ska gå att läsa utan inloggning.
+- RLS är påslaget. Migreringsfilerna ska rättas så att de inte stänger av RLS. Filerna ändras bara. De körs inte här.
+- Cron-rutten ska neka anrop när `CRON_SECRET` saknas.
+- Adressen i keep-alive är inte känslig.
+- Uppgraderingar från `npm audit` görs i en egen säkerhets-pull request senare, och följs av ett fullständigt inloggningstest.
+- Bara Vercel används. Självvärdsplanen i `docs/superpowers/` och självvärdsavsnittet i README ska tas bort.
