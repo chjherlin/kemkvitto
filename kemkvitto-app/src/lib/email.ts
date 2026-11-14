@@ -1,5 +1,4 @@
 import { Resend } from "resend";
-import { generateReceiptPDF } from "./pdf";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -180,36 +179,12 @@ export async function sendReceiptEmail(
     price_list: priceList,
   }, lines, total);
 
-  // Generate PDF
-  const pdfBuffer = generateReceiptPDF({
-    receiptNumber: receipt.receipt_number,
-    tagNumber: receipt.tag_number ?? null,
-    businessName,
-    brandColor,
-    customerName: receipt.customer_name ?? null,
-    customerPhone: receipt.customer_phone ?? null,
-    customerEmail: receipt.customer_email,
-    dropOffDate: receipt.drop_off_date ?? null,
-    deliveryDate: receipt.delivery_date,
-    lines,
-    betPrice: 0,
-    totalAmount: total,
-    comment: receipt.comment,
-    services: receipt.services,
-  });
-
   if (resend) {
     const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: receipt.customer_email,
       subject: `Kvitto #${receipt.receipt_number} — ${businessName}`,
       html,
-      attachments: [
-        {
-          filename: `kvitto-${receipt.receipt_number}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
     });
     if (result.error) {
       console.error(`Resend error for ${receipt.customer_email}:`, result.error);
@@ -222,7 +197,6 @@ export async function sendReceiptEmail(
     console.log(`Subject: Kvitto #${receipt.receipt_number} — ${businessName}`);
     console.log(`Garments: ${lines.map((l) => `${l.name} x${l.qty}`).join(", ")}`);
     console.log(`Total: ${total} kr`);
-    console.log(`PDF: ${pdfBuffer.length} bytes generated`);
     console.log("=====================================");
   }
 }
