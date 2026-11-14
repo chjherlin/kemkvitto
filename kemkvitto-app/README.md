@@ -1,6 +1,6 @@
 # Kemkvitto
 
-Digital receipt system for Swedish dry cleaners. Customers get a PDF receipt by email. They pay at the laundry's own till, not in Kemkvitto.
+Digital receipt system for Swedish dry cleaners. Customers get the receipt in the email itself. They pay at the laundry's own till, not in Kemkvitto.
 
 Built by [Parallaxintel.xyz](https://parallaxintel.xyz).
 
@@ -22,7 +22,6 @@ Built by [Parallaxintel.xyz](https://parallaxintel.xyz).
 | Auth | NextAuth.js 4 (JWT, bcrypt) |
 | Email | Resend |
 | Payments | Stripe is kept for a later laundry subscription. Customers do not pay in the app. |
-| PDF | jsPDF |
 | Styles | Tailwind CSS 4 |
 | Deployment | Docker on a self-hosted box |
 
@@ -137,7 +136,6 @@ kemkvitto-app/
 │       ├── auth.ts               # NextAuth config (bcrypt, JWT)
 │       ├── supabase.ts           # Supabase client (lazy init for Docker compat)
 │       ├── email.ts              # Resend email functions + HTML templates
-│       ├── pdf.ts                # jsPDF receipt generation
 │       ├── i18n.ts               # Translations (sv/en)
 │       └── stripe.ts             # Stripe client
 ├── supabase/migrations/          # SQL migrations (run in order)
