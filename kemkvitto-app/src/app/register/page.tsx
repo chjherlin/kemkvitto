@@ -34,7 +34,12 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/login");
+    try {
+      sessionStorage.setItem("kemkvitto-pending-login-email", email.trim());
+    } catch {
+      // Confirmation still works if storage is blocked.
+    }
+    router.push("/login?registered=1");
   }
 
   return (
