@@ -6,13 +6,15 @@ import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
+import { countries, formatEur, monthlyPriceEur } from "@/lib/pricing";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +26,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, businessName }),
+      body: JSON.stringify({ email, password, businessName, countryCode, locale }),
     });
 
     if (!res.ok) {
@@ -74,6 +76,28 @@ export default function RegisterPage() {
             className="touch-target w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium focus:outline-none"
             style={{ borderColor: "var(--border)" }}
           />
+          <label className="block text-sm font-medium" style={{ color: "#1c1917" }}>
+            {t("auth.country")}
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              required
+              className="touch-target mt-1 w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium"
+              style={{ borderColor: "var(--border)", color: "#1c1917" }}
+            >
+              <option value="">{t("auth.countryPlaceholder")}</option>
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name[locale] || country.name.en}
+                </option>
+              ))}
+            </select>
+          </label>
+          {countryCode && monthlyPriceEur(countryCode) !== null && (
+            <p className="text-center text-sm" style={{ color: "#1c1917" }}>
+              {formatEur(monthlyPriceEur(countryCode)!)} / {t("subscribe.monthly").toLowerCase()}
+            </p>
+          )}
           <input
             type="password"
             placeholder={t("auth.passwordMinLength")}

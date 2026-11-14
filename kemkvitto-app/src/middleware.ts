@@ -1,5 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { loadWasherBilling } from "@/lib/billing";
+import { subscriptionAllowsAccess } from "@/lib/subscription-rules";
 
 const PUBLIC_PATHS = ["/login", "/register", "/api/auth"];
 
@@ -32,9 +34,23 @@ export async function middleware(request: NextRequest) {
   }
 
   const token = await getToken({ req: request });
-  if (!token) {
+  if (!token?.id) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (
+    pathname === "/subscribe" ||
+    pathname.startsWith("/api/subscription")
+  ) {
+    return NextResponse.next();
+  }
+
+  const billing = await loadWasherBilling(String(token.id));
+  const status = billing.ok ? billing.washer.subscription_status : null;
+  if (!subscriptionAllowsAccess(status)) {
+    const subscribeUrl = new URL("/subscribe", request.url);
+    return NextResponse.redirect(subscribeUrl);
   }
 
   return NextResponse.next();
