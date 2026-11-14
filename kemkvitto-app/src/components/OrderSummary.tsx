@@ -23,6 +23,7 @@ interface OrderSummaryProps {
   onRemove: (garment: string) => void;
   onQtyChange: (garment: string, qty: number) => void;
   serviceLines?: ServiceLine[];
+  showPrices?: boolean;
 }
 
 export default function OrderSummary({
@@ -32,6 +33,7 @@ export default function OrderSummary({
   onRemove,
   onQtyChange,
   serviceLines,
+  showPrices = true,
 }: OrderSummaryProps) {
   const { t, tGarment } = useI18n();
 
@@ -83,9 +85,11 @@ export default function OrderSummary({
               </span>
             </div>
             <div className="pos-order-line-right">
-              <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)", minWidth: "3.5rem", textAlign: "right" }}>
-                {lineTotal > 0 ? `${lineTotal} kr` : "—"}
-              </span>
+              {showPrices && (
+                <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)", minWidth: "3.5rem", textAlign: "right" }}>
+                  {lineTotal > 0 ? `${lineTotal} kr` : "—"}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => onRemove(item.garment)}
@@ -107,16 +111,18 @@ export default function OrderSummary({
               <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
                 {svc.label}
               </span>
-              <span className="font-receipt text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-                {svc.price > 0 ? `${svc.price} kr` : "—"}
-              </span>
+              {showPrices && (
+                <span className="font-receipt text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                  {svc.price > 0 ? `${svc.price} kr` : "—"}
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
 
       {/* Totals */}
-      {total > 0 && (
+      {showPrices && total > 0 && (
         <div style={{ borderTop: "2px solid var(--border)", marginTop: "0.5rem", paddingTop: "0.625rem" }}>
           <div className="pos-order-line">
             <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{t("order.total")}</span>
