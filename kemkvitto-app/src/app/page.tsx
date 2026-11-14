@@ -12,6 +12,7 @@ import BottomBar from "@/components/BottomBar";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
+import { pricesEnabled } from "@/lib/prices";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -98,6 +99,7 @@ export default function NewReceiptPage() {
   });
   const serviceTotal = serviceLines.reduce((s, l) => s + l.price, 0);
   const grandTotal = garmentTotal + serviceTotal;
+  const showPrices = pricesEnabled(priceList);
 
   const handleRemove = useCallback((garment: string) => {
     const next = { ...garments };
@@ -260,6 +262,7 @@ export default function NewReceiptPage() {
                 priceList={priceList}
                 brandColor={brandColor}
                 garmentList={garmentList}
+                showPrices={showPrices}
               />
             </div>
 
@@ -292,7 +295,7 @@ export default function NewReceiptPage() {
                   >
                     {active && <span className="pos-service-check">✓</span>}
                     <span>{t(`service.${svc.key}` as Parameters<typeof t>[0])}</span>
-                    {price > 0 && (
+                    {showPrices && price > 0 && (
                       <span className="pos-service-price">{price} kr</span>
                     )}
                   </button>
@@ -472,6 +475,7 @@ export default function NewReceiptPage() {
                 onRemove={handleRemove}
                 onQtyChange={handleQtyChange}
                 serviceLines={serviceLines}
+                showPrices={showPrices}
               />
             </div>
 
@@ -507,6 +511,7 @@ export default function NewReceiptPage() {
           customerName={customerName}
           customerEmail={customerEmail}
           onSubmit={handleSubmit}
+          showPrices={showPrices}
         />
       </form>
     </div>

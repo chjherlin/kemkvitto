@@ -11,6 +11,7 @@ interface BottomBarProps {
   customerName?: string;
   customerEmail?: string;
   onSubmit: () => void;
+  showPrices?: boolean;
 }
 
 export default function BottomBar({
@@ -22,6 +23,7 @@ export default function BottomBar({
   customerName,
   customerEmail,
   onSubmit,
+  showPrices = true,
 }: BottomBarProps) {
   const { t } = useI18n();
 
@@ -43,14 +45,16 @@ export default function BottomBar({
         )}
       </div>
       <div className="pos-bottom-right">
-        <div className="pos-bottom-total">
-          <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>
-            {t("order.total")}
-          </span>
-          <span className="font-receipt text-2xl font-bold" style={{ color: brandColor }}>
-            {total > 0 ? `${total} kr` : "—"}
-          </span>
-        </div>
+        {showPrices && (
+          <div className="pos-bottom-total">
+            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>
+              {t("order.total")}
+            </span>
+            <span className="font-receipt text-2xl font-bold" style={{ color: brandColor }}>
+              {total > 0 ? `${total} kr` : "—"}
+            </span>
+          </div>
+        )}
         <button
           type="button"
           disabled={disabled}
