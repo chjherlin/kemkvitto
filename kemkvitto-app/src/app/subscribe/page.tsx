@@ -16,12 +16,13 @@ interface StatusResponse {
   hasCustomer?: boolean;
   monthlyEur?: number | null;
   yearlyEur?: number | null;
+  currentPeriodEnd?: string | null;
   countries?: { code: string; name: Record<string, string> }[];
   error?: string;
 }
 
 export default function SubscribePage() {
-  const { status } = useSession();
+  const { status, update } = useSession();
   const router = useRouter();
   const { t, locale } = useI18n();
   const [info, setInfo] = useState<StatusResponse | null>(null);
@@ -41,9 +42,15 @@ export default function SubscribePage() {
       .then((data: StatusResponse) => {
         setInfo(data);
         if (data.countryCode) setCountryCode(data.countryCode);
+        void update({
+          subscriptionStatus: data.status ?? null,
+          currentPeriodEnd: data.currentPeriodEnd ?? null,
+        });
       })
       .catch(() => setError(t("auth.registerError")));
-  }, [status, t]);
+    // update() writes the JWT once after this read. It is not a dependency, so a new session does not fetch again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   async function saveCountry() {
     setError("");

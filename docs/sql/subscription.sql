@@ -1,4 +1,6 @@
 -- Proposal only. Kimmen runs this in Supabase. Do not apply it from the app.
+-- There is no backfill. Existing test accounts should be deleted in Supabase
+-- before this is used. Kimmen does that himself.
 -- Adds subscription fields on washers. Does not disable RLS and does not add policies.
 -- The app uses the service role and filters every washer query by the logged-in id.
 -- Until these columns exist, nobody can pass the subscription gate.

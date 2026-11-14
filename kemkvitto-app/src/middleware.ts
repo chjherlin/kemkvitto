@@ -1,59 +1,101 @@
-import { getToken } from "next-auth/jwt";
+import { encode, getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { loadWasherBilling } from "@/lib/billing";
-import { subscriptionAllowsAccess } from "@/lib/subscription-rules";
+import { subscriptionAllowsAccess, tokenGrantsAccess } from "@/lib/subscription-rules";
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/register", "/privacy", "/terms", "/api/auth"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Allow the customer email page (no auth needed — customer-facing)
   if (pathname.match(/^\/receipt\/[^/]+\/email$/)) {
     return NextResponse.next();
   }
 
-  // Allow API receipt email endpoint (customer submits email)
   if (pathname.match(/^\/api\/receipts\/[^/]+\/email$/)) {
     return NextResponse.next();
   }
 
-  // Stripe can call the webhook without a washer session.
   if (pathname.startsWith("/api/webhooks/")) {
     return NextResponse.next();
   }
 
-  // Allow cron endpoint (would be protected by secret in production)
   if (pathname.startsWith("/api/cron")) {
     return NextResponse.next();
   }
 
   const token = await getToken({ req: request });
   if (!token?.id) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  if (pathname === "/subscribe" || pathname.startsWith("/api/subscription")) {
+    return NextResponse.next();
+  }
+
+  const now = Date.now();
   if (
-    pathname === "/subscribe" ||
-    pathname.startsWith("/api/subscription")
+    tokenGrantsAccess({
+      status: token.subscriptionStatus,
+      checkedAt: token.subscriptionCheckedAt,
+      periodEnd: token.currentPeriodEnd,
+      now,
+    })
   ) {
     return NextResponse.next();
   }
 
   const billing = await loadWasherBilling(String(token.id));
   const status = billing.ok ? billing.washer.subscription_status : null;
+  const periodEnd = billing.ok ? billing.washer.current_period_end : null;
   if (!subscriptionAllowsAccess(status)) {
-    const subscribeUrl = new URL("/subscribe", request.url);
-    return NextResponse.redirect(subscribeUrl);
+    return NextResponse.redirect(new URL("/subscribe", request.url));
   }
 
-  return NextResponse.next();
+  return withRefreshedSession(request, token, status, periodEnd);
+}
+
+async function withRefreshedSession(
+  request: NextRequest,
+  token: Record<string, unknown>,
+  status: string | null,
+  periodEnd: string | null
+) {
+  const response = NextResponse.next();
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) return response;
+
+  const secure = request.nextUrl.protocol === "https:";
+  const name = secure ? "__Secure-next-auth.session-token" : "next-auth.session-token";
+  try {
+    const claims = { ...token };
+    delete claims.exp;
+    delete claims.iat;
+    delete claims.jti;
+    delete claims.nbf;
+    const value = await encode({
+      token: {
+        ...claims,
+        subscriptionStatus: status,
+        currentPeriodEnd: periodEnd,
+        subscriptionCheckedAt: Date.now(),
+      },
+      secret,
+    });
+    response.cookies.set(name, value, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure,
+    });
+  } catch {
+    // Access is already allowed. The next request can read the database again.
+  }
+  return response;
 }
 
 export const config = {
