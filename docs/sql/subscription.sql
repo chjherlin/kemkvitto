@@ -17,6 +17,8 @@ ALTER TABLE washers ADD COLUMN IF NOT EXISTS pending_price_amount_cents integer;
 ALTER TABLE washers ADD COLUMN IF NOT EXISTS pending_price_effective_at timestamptz;
 ALTER TABLE washers ADD COLUMN IF NOT EXISTS price_notice_sent_at timestamptz;
 ALTER TABLE washers ADD COLUMN IF NOT EXISTS billing_country_code text;
+ALTER TABLE washers ADD COLUMN IF NOT EXISTS vat_number text;
+ALTER TABLE washers ADD COLUMN IF NOT EXISTS vat_verification text;
 
 CREATE UNIQUE INDEX IF NOT EXISTS washers_stripe_customer_id_key
   ON washers (stripe_customer_id)

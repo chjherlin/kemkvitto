@@ -115,11 +115,17 @@ export default function SubscribePage() {
     <div className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-10" style={{ color: "#1c1917" }}>
       <h1 className="text-3xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>{t("subscribe.title")}</h1>
       <p>{t("subscribe.lead")}</p>
+      <p>{t("subscribe.businessVat")}</p>
       <p className="text-sm" style={{ color: "#44403c" }}>{t("subscribe.reverseCharge")}</p>
 
       {info.missingColumns && (
         <p role="alert" className="rounded-xl p-4 text-sm" style={{ backgroundColor: "#fef2f2", color: "#7f1d1d" }}>
           {t("subscribe.notReady")}
+        </p>
+      )}
+      {info.status === "vat_missing" && (
+        <p role="alert" className="rounded-xl p-4 text-sm" style={{ backgroundColor: "#fef2f2", color: "#7f1d1d" }}>
+          {t("subscribe.vatMissing")}
         </p>
       )}
       {info.status === "country_mismatch" && (

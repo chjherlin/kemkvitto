@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase";
-import { findWasherIdByCustomer, updateWasherBilling } from "@/lib/billing";
-import { billingCountryMatches } from "@/lib/subscription-rules";
+import { findWasherIdByCustomer, loadWasherBilling, updateWasherBilling } from "@/lib/billing";
+import { assessBusinessTaxId, billingCountryMatches, type TaxIdInput } from "@/lib/subscription-rules";
 import { reverseChargeNote, normalizeLocale } from "@/lib/subscription-notices";
 import { asId, subscriptionInterval, subscriptionPeriodEnd, subscriptionPriceCents } from "@/lib/stripe-billing";
 
@@ -12,6 +12,45 @@ async function resolveWasherId(metadata: Stripe.Metadata | null | undefined, cus
   if (fromMetadata) return fromMetadata;
   if (!customerId) return null;
   return findWasherIdByCustomer(customerId);
+}
+
+function toTaxInput(id: { type: string; value?: string | null; country?: string | null; verification?: { status?: string | null } | null }): TaxIdInput {
+  return {
+    type: id.type,
+    value: id.value,
+    country: id.country,
+    verificationStatus: id.verification?.status,
+  };
+}
+
+async function customerTaxIds(stripe: Stripe, customerId: string | null): Promise<TaxIdInput[]> {
+  if (!customerId) return [];
+  const listed = await stripe.customers.listTaxIds(customerId, { limit: 100 });
+  return listed.data.map(toTaxInput);
+}
+
+async function rejectSubscription(
+  stripe: Stripe,
+  washerId: string,
+  subscription: Stripe.Subscription,
+  customerId: string | null,
+  status: "country_mismatch" | "vat_missing",
+  extra: Record<string, unknown>
+) {
+  const flag = status === "vat_missing" ? "vat_missing" : "country_mismatch";
+  if (subscription.status !== "canceled") {
+    await stripe.subscriptions.update(subscription.id, {
+      metadata: { ...subscription.metadata, [flag]: "1", washer_id: washerId },
+    });
+    await stripe.subscriptions.cancel(subscription.id);
+  }
+  await updateWasherBilling(washerId, {
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscription.id,
+    subscription_status: status,
+    ...extra,
+  });
+  console.log(`Subscription ${status} washer=${washerId}`);
 }
 
 async function saveSubscription(washerId: string, subscription: Stripe.Subscription, customerId: string | null) {
@@ -84,22 +123,43 @@ export async function POST(request: Request) {
       }
 
       if (!billingCountryMatches(expected, billingCountry)) {
-        await stripe.subscriptions.update(subscriptionId, {
-          metadata: { ...subscription.metadata, country_mismatch: "1", washer_id: washerId },
-        });
-        await stripe.subscriptions.cancel(subscriptionId);
-        await updateWasherBilling(washerId, {
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-          subscription_status: "country_mismatch",
+        await rejectSubscription(stripe, washerId, subscription, customerId, "country_mismatch", {
           billing_country_code: billingCountry,
         });
-        console.log(`Subscription country mismatch washer=${washerId}`);
         break;
       }
 
+      const sessionIds = (session.customer_details?.tax_ids || []).map((id) => toTaxInput(id));
+      const merged = new Map<string, TaxIdInput>();
+      for (const id of sessionIds) {
+        if (!id.value) continue;
+        merged.set(`${id.type}:${id.value}`, id);
+      }
+      for (const id of await customerTaxIds(stripe, customerId)) {
+        if (!id.value) continue;
+        merged.set(`${id.type}:${id.value}`, id);
+      }
+      const decision = assessBusinessTaxId({
+        taxIds: [...merged.values()],
+        registeredCountry: expected,
+        billingCountry,
+      });
+      if (!decision.ok) {
+        await rejectSubscription(stripe, washerId, subscription, customerId, decision.status, {
+          billing_country_code: billingCountry,
+        });
+        break;
+      }
+      if (decision.verificationStatus === "unverified") {
+        console.log(`VAT unverified washer=${washerId}`);
+      }
+
       await saveSubscription(washerId, subscription, customerId);
-      await updateWasherBilling(washerId, { billing_country_code: billingCountry });
+      await updateWasherBilling(washerId, {
+        billing_country_code: billingCountry,
+        vat_number: decision.vatNumber,
+        vat_verification: decision.verificationStatus,
+      });
       break;
     }
 
@@ -117,7 +177,47 @@ export async function POST(request: Request) {
         });
         break;
       }
+      if (subscription.metadata?.vat_missing === "1") {
+        await updateWasherBilling(washerId, {
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          subscription_status: "vat_missing",
+        });
+        break;
+      }
+      const current = await loadWasherBilling(washerId);
+      if (
+        current.ok &&
+        (current.washer.subscription_status === "country_mismatch" ||
+          current.washer.subscription_status === "vat_missing")
+      ) {
+        break;
+      }
+
+      const taxIds = await customerTaxIds(stripe, customerId);
+      const decision = assessBusinessTaxId({
+        taxIds,
+        registeredCountry: subscription.metadata?.country_code,
+        billingCountry: current.ok ? current.washer.billing_country_code : null,
+      });
+      if (!decision.ok) {
+        if (decision.status === "vat_missing" && taxIds.length === 0) {
+          // Checkout copies the tax ID onto the customer as the session completes.
+          // This event can arrive first. Leave access closed; the session handler cancels if it stays missing.
+          console.log(`Subscription ${subscription.id} has no tax ID yet`);
+          break;
+        }
+        await rejectSubscription(stripe, washerId, subscription, customerId, decision.status, {});
+        break;
+      }
+      if (decision.verificationStatus === "unverified") {
+        console.log(`VAT unverified washer=${washerId}`);
+      }
       await saveSubscription(washerId, subscription, customerId);
+      await updateWasherBilling(washerId, {
+        vat_number: decision.vatNumber,
+        vat_verification: decision.verificationStatus,
+      });
       break;
     }
 
@@ -127,11 +227,39 @@ export async function POST(request: Request) {
       const washerId = await resolveWasherId(subscription.metadata, customerId);
       if (!washerId) break;
       const mismatch = subscription.metadata?.country_mismatch === "1";
+      const vatMissing = subscription.metadata?.vat_missing === "1";
+      let subscriptionStatus = mismatch ? "country_mismatch" : vatMissing ? "vat_missing" : "canceled";
+      if (subscriptionStatus === "canceled") {
+        const current = await loadWasherBilling(washerId);
+        if (
+          current.ok &&
+          (current.washer.subscription_status === "country_mismatch" ||
+            current.washer.subscription_status === "vat_missing")
+        ) {
+          subscriptionStatus = current.washer.subscription_status;
+        }
+      }
       await updateWasherBilling(washerId, {
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
-        subscription_status: mismatch ? "country_mismatch" : "canceled",
+        subscription_status: subscriptionStatus,
         current_period_end: subscriptionPeriodEnd(subscription),
+      });
+      break;
+    }
+
+    case "customer.tax_id.updated": {
+      const taxId = event.data.object as Stripe.TaxId;
+      const customerId = asId(taxId.customer);
+      const washerId = customerId ? await findWasherIdByCustomer(customerId) : null;
+      if (!washerId) break;
+      const verification = taxId.verification?.status || "unknown";
+      if (verification === "unverified") {
+        console.log(`VAT unverified washer=${washerId} type=${taxId.type}`);
+      }
+      await updateWasherBilling(washerId, {
+        vat_number: taxId.value,
+        vat_verification: verification,
       });
       break;
     }

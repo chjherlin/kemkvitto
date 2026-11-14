@@ -15,10 +15,12 @@ export interface WasherBilling {
   pending_price_amount_cents: number | null;
   pending_price_effective_at: string | null;
   billing_country_code: string | null;
+  vat_number: string | null;
+  vat_verification: string | null;
 }
 
 const BILLING_SELECT =
-  "id, email, business_name, country_code, locale, stripe_customer_id, stripe_subscription_id, subscription_status, subscription_interval, current_period_end, price_amount_cents, pending_price_amount_cents, pending_price_effective_at, billing_country_code";
+  "id, email, business_name, country_code, locale, stripe_customer_id, stripe_subscription_id, subscription_status, subscription_interval, current_period_end, price_amount_cents, pending_price_amount_cents, pending_price_effective_at, billing_country_code, vat_number, vat_verification";
 
 function missingColumn(code: string | undefined): boolean {
   return code === "42703" || code === "PGRST204";

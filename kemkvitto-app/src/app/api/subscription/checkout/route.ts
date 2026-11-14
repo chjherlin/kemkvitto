@@ -53,7 +53,9 @@ export async function POST(request: Request) {
     client_reference_id: washerId,
     billing_address_collection: "required",
     payment_method_collection: "always",
-    tax_id_collection: { enabled: true },
+    // Stripe SDK 20.4.1 only allows "if_supported" or "never". if_supported is the
+    // strictest: Checkout requires a tax ID when the billing country has one.
+    tax_id_collection: { enabled: true, required: "if_supported" },
     customer_update: washer.stripe_customer_id ? { address: "auto", name: "auto" } : undefined,
     custom_text: { submit: { message: reverseChargeNote(locale) } },
     line_items: [

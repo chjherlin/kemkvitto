@@ -114,11 +114,23 @@ const translations = {
   "subscribe.start": { sv: "Starta provperiod", en: "Start trial", da: "Start prøveperiode", no: "Start prøveperiode" },
   "subscribe.manage": { sv: "Hantera kort eller avsluta", en: "Manage card or cancel", da: "Administrer kort eller opsig", no: "Administrer kort eller avslutt" },
   "subscribe.continue": { sv: "Till kassan", en: "Continue to the till", da: "Videre til kassen", no: "Videre til kassen" },
+  "subscribe.businessVat": {
+    sv: "Kemkvitto är för företag. Ett momsregistreringsnummer krävs.",
+    en: "Kemkvitto is for businesses. A VAT number is required.",
+    da: "Kemkvitto er til virksomheder. Et momsnummer er påkrævet.",
+    no: "Kemkvitto er for bedrifter. Et MVA-nummer kreves.",
+  },
   "subscribe.mismatch": {
-    sv: "Fakturaadressen i Stripe matchade inte landet du valde. Prenumerationen startades inte. Välj samma land som på kortfakturan och försök igen.",
-    en: "The Stripe billing address did not match the country you chose. The subscription was not started. Choose the same country as the card billing address and try again.",
-    da: "Fakturaadressen i Stripe matchede ikke det land, du valgte. Abonnementet blev ikke startet. Vælg samme land som på kortfakturaen og prøv igen.",
-    no: "Fakturaadressen i Stripe samsvarte ikke med landet du valgte. Abonnementet ble ikke startet. Velg samme land som på kortfakturaen og prøv igjen.",
+    sv: "Fakturaadressen eller momsnumrets land i Stripe matchade inte landet du valde. Prenumerationen startades inte. Välj samma land och försök igen.",
+    en: "The Stripe billing address or VAT number country did not match the country you chose. The subscription was not started. Choose the same country and try again.",
+    da: "Fakturaadressen eller momsnummerets land i Stripe matchede ikke det land, du valgte. Abonnementet blev ikke startet. Vælg samme land og prøv igen.",
+    no: "Fakturaadressen eller MVA-nummerets land i Stripe samsvarte ikke med landet du valgte. Abonnementet ble ikke startet. Velg samme land og prøv igjen.",
+  },
+  "subscribe.vatMissing": {
+    sv: "Ett momsregistreringsnummer krävs. Prenumerationen startades inte. Ange momsnummer hos Stripe och försök igen.",
+    en: "A VAT number is required. The subscription was not started. Enter the VAT number in Stripe and try again.",
+    da: "Et momsnummer er påkrævet. Abonnementet blev ikke startet. Angiv momsnummer hos Stripe og prøv igen.",
+    no: "Et MVA-nummer kreves. Abonnementet ble ikke startet. Oppgi MVA-nummer hos Stripe og prøv igjen.",
   },
   "subscribe.notReady": {
     sv: "Prenumerationen kan inte sparas ännu. Databaskolumnerna saknas.",
