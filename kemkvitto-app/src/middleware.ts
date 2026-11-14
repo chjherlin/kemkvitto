@@ -21,16 +21,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow payment pages and APIs (customer-facing)
-  if (pathname.startsWith("/pay/")) {
-    return NextResponse.next();
-  }
-  if (pathname.startsWith("/api/pay/")) {
-    return NextResponse.next();
-  }
-  if (pathname.startsWith("/api/payments/")) {
-    return NextResponse.next();
-  }
+  // Stripe can call the webhook without a washer session.
   if (pathname.startsWith("/api/webhooks/")) {
     return NextResponse.next();
   }

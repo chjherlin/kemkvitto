@@ -18,11 +18,9 @@ export async function PATCH(
   const supabase = createServiceClient();
 
   // Fetch existing receipt to check ownership and detect changes.
-  // Only select columns guaranteed to exist (migration 001 + 004).
-  // Avoid selecting `paid` — it's not in any migration; use payment_status instead.
   const { data: existing } = await supabase
     .from("receipts")
-    .select("washer_id, delivery_date, customer_email, payment_status, reminder_sent")
+    .select("washer_id, delivery_date, customer_email, reminder_sent")
     .eq("id", id)
     .single();
 
@@ -34,7 +32,6 @@ export async function PATCH(
   const { garments, services, deliveryDate, customerName, customerEmail, comment, amountTotal } = body;
 
   const dateChanged = deliveryDate && deliveryDate !== existing.delivery_date;
-  const isPaid = existing.payment_status === "paid";
 
   // Try full update (including services); fall back without services if column missing
   let updateError = (await supabase
@@ -70,8 +67,7 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Send update email to customer if they have an email and receipt isn't paid
-  if (customerEmail && !isPaid) {
+  if (customerEmail) {
     try {
       const { data: washer } = await supabase
         .from("washers")
@@ -95,7 +91,6 @@ export async function PATCH(
         customer_name: customerName || null,
         comment: comment || null,
         amount_total: amountTotal ?? 0,
-        paid: false,
         services: services ?? [],
       };
 
