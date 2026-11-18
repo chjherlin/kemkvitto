@@ -260,6 +260,16 @@ export default function SettingsPage() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-6">
+        <section>
+          <Link
+            href="/subscribe"
+            className="touch-target flex w-full items-center rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium"
+            style={{ borderColor: "var(--border)", color: "#1c1917", minHeight: "48px" }}
+          >
+            {t("settings.subscription")}
+          </Link>
+        </section>
+
         {/* Business name */}
         <section>
           <h2
