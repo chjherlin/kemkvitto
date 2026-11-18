@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -30,13 +30,15 @@ export default function SubscribePage() {
   const [countryCode, setCountryCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const hasLoaded = useRef(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || hasLoaded.current) return;
+    hasLoaded.current = true;
     fetch("/api/subscription/status")
       .then((r) => r.json())
       .then((data: StatusResponse) => {
@@ -48,7 +50,7 @@ export default function SubscribePage() {
         });
       })
       .catch(() => setError(t("auth.registerError")));
-    // update() writes the JWT once after this read. It is not a dependency, so a new session does not fetch again.
+    // update() flips status through "loading", which must not start another fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -103,7 +105,7 @@ export default function SubscribePage() {
     window.location.href = data.url;
   }
 
-  if (status !== "authenticated" || !info) {
+  if (!info) {
     return <div className="flex min-h-screen items-center justify-center" style={{ color: "#1c1917" }}>…</div>;
   }
 
