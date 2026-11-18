@@ -39,6 +39,7 @@ const translations = {
 
   // Settings
   "settings.title": { sv: "Inställningar", en: "Settings", da: "Indstillinger", no: "Innstillinger" },
+  "settings.subscription": { sv: "Prenumeration och betalning", en: "Subscription and billing", da: "Abonnement og betaling", no: "Abonnement og betaling" },
   "settings.businessName": { sv: "Företagsnamn", en: "Business name", da: "Virksomhedsnavn", no: "Bedriftsnavn" },
   "settings.brandColor": { sv: "Kvittofärg", en: "Receipt color", da: "Kvitteringsfarve", no: "Kvitteringsfarge" },
   "settings.usePrices": { sv: "Använd priser", en: "Use prices", da: "Brug priser", no: "Bruk priser" },
@@ -119,7 +120,7 @@ const translations = {
   "subscribe.yearly": { sv: "År", en: "Yearly", da: "År", no: "År" },
   "subscribe.start": { sv: "Starta provperiod", en: "Start trial", da: "Start prøveperiode", no: "Start prøveperiode" },
   "subscribe.manage": { sv: "Hantera kort eller avsluta", en: "Manage card or cancel", da: "Administrer kort eller opsig", no: "Administrer kort eller avslutt" },
-  "subscribe.continue": { sv: "Till kassan", en: "Continue to the till", da: "Videre til kassen", no: "Videre til kassen" },
+  "subscribe.continue": { sv: "Gå till appen", en: "Go to the app", da: "Gå til appen", no: "Gå til appen" },
   "subscribe.businessVat": {
     sv: "Kemkvitto är för företag. Ett momsregistreringsnummer krävs.",
     en: "Kemkvitto is for businesses. A VAT number is required.",
