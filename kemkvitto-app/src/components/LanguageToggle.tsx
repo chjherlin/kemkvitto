@@ -5,7 +5,7 @@ import { useI18n, type Locale } from "@/lib/i18n";
 const LOCALES: Locale[] = ["sv", "en", "da", "no"];
 const LABELS: Record<Locale, string> = { sv: "SV", en: "EN", da: "DA", no: "NO" };
 
-export default function LanguageToggle() {
+export default function LanguageToggle({ color }: { color?: string }) {
   const { locale, setLocale } = useI18n();
 
   function nextLocale() {
@@ -16,8 +16,8 @@ export default function LanguageToggle() {
   return (
     <button
       onClick={nextLocale}
-      className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-100"
-      style={{ color: "var(--text-muted)" }}
+      className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold"
+      style={{ color: color ?? "currentColor" }}
       title={`Language: ${LABELS[locale]}`}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

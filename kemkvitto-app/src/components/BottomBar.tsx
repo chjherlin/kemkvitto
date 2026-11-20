@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
+import { onBrand } from "@/lib/brand";
 
 interface BottomBarProps {
   garmentCount: number;
@@ -62,7 +63,7 @@ export default function BottomBar({
           className="pos-submit-btn"
           style={{
             backgroundColor: disabled ? "var(--border)" : brandColor,
-            color: disabled ? "var(--text-light)" : "white",
+            color: disabled ? "var(--text-light)" : onBrand(brandColor),
             boxShadow: disabled ? "none" : `0 4px 20px ${brandColor}40`,
           }}
         >

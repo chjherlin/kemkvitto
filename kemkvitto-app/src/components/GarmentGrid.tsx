@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
+import { onBrand } from "@/lib/brand";
 
 export interface GarmentEntry {
   qty: number;
@@ -128,6 +129,7 @@ export default function GarmentGrid({
                 className="pos-tile-badge"
                 style={{
                   backgroundColor: brandColor,
+                  color: onBrand(brandColor),
                   top: "0.25rem",
                   left: "0.25rem",
                   right: "auto",

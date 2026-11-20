@@ -8,19 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
-
-const BRAND_COLORS = [
-  "#82C58A", // grön (green)
-  "#6BA6D2", // blå (blue)
-  "#EBA17D", // orange
-  "#3CB4A9", // blågrön (teal)
-  "#BA906C", // brun (brown)
-  "#ECE080", // gul (yellow)
-  "#ABA2DA", // lila (purple)
-  "#EFC6D2", // rosa (pink)
-  "#E5919D", // röd (red)
-  "#ACA6A2", // grå (grey)
-];
+import { DEFAULT_BRAND, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 
 function ItemListEditor({
   title,
@@ -114,7 +102,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { t } = useI18n();
 
-  const [brandColor, setBrandColor] = useState("#82C58A");
+  const [brandColor, setBrandColor] = useState(DEFAULT_BRAND);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const [businessName, setBusinessName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -135,7 +123,7 @@ export default function SettingsPage() {
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data) => {
-        setBrandColor(data.brandColor || "#82C58A");
+        setBrandColor(data.brandColor || DEFAULT_BRAND);
         setPriceList(data.priceList || {});
         setBusinessName(data.businessName || "");
         setGarmentList(data.garmentList || []);
@@ -210,6 +198,10 @@ export default function SettingsPage() {
     setList([...list, ""]);
   }
 
+  const theme = brandTheme(brandColor);
+  const selectedBase = theme.base.toLowerCase();
+  const selectedStrength: Strength = theme.strength ?? "standard";
+
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -222,19 +214,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: `linear-gradient(135deg, ${brandColor}12 0%, ${brandColor}06 50%, var(--bg) 100%)`, minHeight: '100vh' }}>
+    <div className="min-h-screen" style={{ background: theme.tint, minHeight: '100vh' }}>
       <header
-        className="sticky top-0 z-20 border-b backdrop-blur-md"
+        className="sticky top-0 z-20 border-b"
         style={{
-          backgroundColor: "rgba(255,255,255,0.85)",
-          borderColor: "var(--border)",
+          backgroundColor: theme.bar,
+          borderColor: "transparent",
+          color: theme.barInk,
         }}
       >
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link
             href="/"
             className="text-sm font-medium"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: theme.barInk }}
           >
             {t("nav.back")}
           </Link>
@@ -252,8 +245,8 @@ export default function SettingsPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              style={{ backgroundColor: brandColor }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold"
+              style={{ backgroundColor: theme.brand, color: theme.onBrand }}
             >
               {saved ? t("settings.saved") : saving ? t("settings.saving") : t("settings.save")}
             </button>
@@ -326,8 +319,8 @@ export default function SettingsPage() {
                 setTimeout(() => setResetDone(false), 2000);
               }}
               disabled={!resetNumber}
-              className="rounded-xl px-6 py-4 text-sm font-semibold text-white"
-              style={{ backgroundColor: resetNumber ? brandColor : "var(--border)", minHeight: "48px" }}
+              className="rounded-xl px-6 py-4 text-sm font-semibold"
+              style={{ backgroundColor: resetNumber ? theme.brand : "var(--border)", color: resetNumber ? theme.onBrand : "var(--text-light)", minHeight: "48px" }}
             >
               {resetDone ? t("settings.receiptNumberReset") : t("settings.receiptNumberSet")}
             </button>
@@ -343,22 +336,48 @@ export default function SettingsPage() {
             {t("settings.brandColor")}
           </h2>
           <div className="flex flex-wrap gap-3">
-            {BRAND_COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={() => setBrandColor(color)}
-                className="h-12 w-12 rounded-xl transition-all"
-                style={{
-                  backgroundColor: color,
-                  outline:
-                    brandColor === color
-                      ? `3px solid ${color}`
-                      : "2px solid transparent",
-                  outlineOffset: brandColor === color ? "3px" : "0",
-                  transform: brandColor === color ? "scale(1.1)" : "scale(1)",
-                }}
-              />
-            ))}
+            {PALETTE.map((color) => {
+              const selected = selectedBase === color.hex.toLowerCase();
+              return (
+                <button
+                  key={color.id}
+                  type="button"
+                  aria-label={color.name}
+                  aria-pressed={selected}
+                  onClick={() => setBrandColor(applyStrength(color.hex, selectedStrength))}
+                  className="h-12 w-12 rounded-xl"
+                  style={{
+                    backgroundColor: color.hex,
+                    outline: selected ? `3px solid ${color.hex}` : "2px solid transparent",
+                    outlineOffset: selected ? "3px" : "0",
+                  }}
+                />
+              );
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label={t("settings.strength")}>
+            {STRENGTHS.map((level) => {
+              const selected = theme.strength === level;
+              const label = level === "damped" ? t("settings.strengthDamped") : level === "strong" ? t("settings.strengthStrong") : t("settings.strengthStandard");
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setBrandColor(applyStrength(theme.base, level))}
+                  className="rounded-xl border-2 px-4 text-base font-semibold"
+                  style={{
+                    minHeight: "48px",
+                    borderColor: selected ? theme.brand : "var(--border)",
+                    backgroundColor: selected ? theme.tint : "#fff",
+                    color: "#1c1917",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </section>
 

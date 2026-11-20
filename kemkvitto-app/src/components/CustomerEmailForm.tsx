@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
+import { DEFAULT_BRAND, brandTheme } from "@/lib/brand";
 
 interface CustomerEmailFormProps {
   receiptId: string;
@@ -11,10 +12,11 @@ interface CustomerEmailFormProps {
 
 export default function CustomerEmailForm({
   receiptId,
-  brandColor = "#0891b2",
+  brandColor = DEFAULT_BRAND,
   businessName,
 }: CustomerEmailFormProps) {
   const { t } = useI18n();
+  const theme = brandTheme(brandColor);
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -72,8 +74,8 @@ export default function CustomerEmailForm({
       <div className="flex min-h-screen flex-col items-center justify-center px-6">
         <div className="animate-fade-up text-center">
           <div
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full text-4xl text-white"
-            style={{ backgroundColor: brandColor }}
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full text-4xl"
+            style={{ backgroundColor: theme.brand, color: theme.onBrand }}
           >
             ✓
           </div>
@@ -94,7 +96,7 @@ export default function CustomerEmailForm({
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center px-6"
-      style={{ background: `linear-gradient(135deg, ${brandColor}08 0%, ${brandColor}03 100%)` }}
+      style={{ background: theme.tint }}
     >
       <form
         onSubmit={handleSubmit}
@@ -165,10 +167,11 @@ export default function CustomerEmailForm({
         <button
           type="submit"
           disabled={submitting || !email}
-          className="touch-target w-full rounded-2xl px-6 py-5 text-2xl font-bold text-white shadow-lg transition-all disabled:opacity-40"
+          className="touch-target w-full rounded-2xl px-6 py-5 text-2xl font-bold shadow-lg transition-all disabled:opacity-40"
           style={{
-            backgroundColor: brandColor,
-            boxShadow: `0 4px 20px ${brandColor}40`,
+            backgroundColor: theme.brand,
+            color: theme.onBrand,
+            boxShadow: `0 4px 20px ${theme.brand}40`,
           }}
         >
           {submitting ? t("email.submitting") : t("email.submit")}

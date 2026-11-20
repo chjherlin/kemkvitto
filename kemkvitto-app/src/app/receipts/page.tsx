@@ -8,6 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
+import { DEFAULT_BRAND, brandTheme, onBrand } from "@/lib/brand";
 
 interface Receipt {
   id: string;
@@ -200,7 +201,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
                 borderRadius: "0.5rem",
                 border: "none",
                 backgroundColor: addGarment ? brandColor : "var(--border)",
-                color: "white",
+                color: addGarment ? onBrand(brandColor) : "var(--text-light)",
                 fontWeight: 700,
                 fontSize: "0.875rem",
                 cursor: addGarment ? "pointer" : "default",
@@ -333,7 +334,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
                 Avbryt
               </button>
               <button type="button" onClick={handleSave} disabled={saving}
-                style={{ flex: 2, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: "white", cursor: saving ? "default" : "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
+                style={{ flex: 2, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: saving ? "var(--text-light)" : onBrand(brandColor), cursor: saving ? "default" : "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
                 {saving ? "Sparar…" : "Spara ändringar"}
               </button>
             </>
@@ -351,9 +352,10 @@ export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "number">("date");
-  const [brandColor, setBrandColor] = useState("#82C58A");
+  const [brandColor, setBrandColor] = useState(DEFAULT_BRAND);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const showPrices = pricesEnabled(priceList);
+  const theme = brandTheme(brandColor);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
@@ -457,13 +459,13 @@ export default function ReceiptsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: `linear-gradient(135deg, ${brandColor}20 0%, ${brandColor}0a 50%, var(--bg) 100%)`, minHeight: "100vh" }}>
+    <div className="min-h-screen" style={{ background: theme.tint, minHeight: "100vh" }}>
       <header
-        className="sticky top-0 z-20 border-b backdrop-blur-md"
-        style={{ backgroundColor: "rgba(255,255,255,0.85)", borderColor: "var(--border)" }}
+        className="sticky top-0 z-20 border-b"
+        style={{ backgroundColor: theme.bar, borderColor: "transparent", color: theme.barInk }}
       >
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+          <Link href="/" className="flex items-center gap-2 text-sm font-medium" style={{ color: theme.barInk }}>
             ← {t("nav.newReceipt")}
           </Link>
           <h1 className="text-lg font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
@@ -487,7 +489,7 @@ export default function ReceiptsPage() {
                   className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
                   style={{
                     backgroundColor: sortBy === s ? brandColor : "transparent",
-                    color: sortBy === s ? "white" : "var(--text-muted)",
+                    color: sortBy === s ? theme.onBrand : theme.barInk,
                   }}
                 >
                   {s === "date" ? t("receipts.sortDate") : t("receipts.sortNumber")}
@@ -499,7 +501,7 @@ export default function ReceiptsPage() {
       </header>
 
       {saveMsg && (
-        <div style={{ position: "fixed", top: "4rem", left: "50%", transform: "translateX(-50%)", background: brandColor, color: "white", padding: "0.5rem 1.25rem", borderRadius: "999px", fontWeight: 700, zIndex: 60, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+        <div style={{ position: "fixed", top: "4rem", left: "50%", transform: "translateX(-50%)", background: theme.brand, color: theme.onBrand, padding: "0.5rem 1.25rem", borderRadius: "999px", fontWeight: 700, zIndex: 60, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
           {saveMsg}
         </div>
       )}
@@ -523,7 +525,7 @@ export default function ReceiptsPage() {
                       {dateKey === today ? `${t("receipts.today")} — ${dateKey}` : dateKey}
                     </h2>
                     {dateKey === today && (
-                      <span className="rounded-full px-2 py-0.5 text-xs font-bold text-white" style={{ backgroundColor: brandColor }}>
+                      <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ backgroundColor: theme.brand, color: theme.onBrand }}>
                         {items.length}
                       </span>
                     )}

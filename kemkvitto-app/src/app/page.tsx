@@ -15,18 +15,10 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
+import { DEFAULT_BRAND, brandTheme } from "@/lib/brand";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
-}
-
-/** Mix a hex brand color with white at the given percentage (0–1). */
-function blendWithWhite(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const mix = (c: number) => Math.round(c * alpha + 255 * (1 - alpha));
-  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
 export default function NewReceiptPage() {
@@ -50,7 +42,7 @@ export default function NewReceiptPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [successInfo, setSuccessInfo] = useState<{ receiptNum: string | number; emailSent: boolean; customerName: string } | null>(null);
-  const [brandColor, setBrandColor] = useState("#82C58A");
+  const [brandColor, setBrandColor] = useState(DEFAULT_BRAND);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
   const [garmentList, setGarmentList] = useState<string[]>([]);
@@ -71,7 +63,7 @@ export default function NewReceiptPage() {
           const next = data.nextReceiptNumber ?? 1;
           setReceiptNumber(next);
           setNumberDraft(formatReceiptNumber(next));
-          setBrandColor(data.brandColor || "#82C58A");
+          setBrandColor(data.brandColor || DEFAULT_BRAND);
           if (data.priceList) setPriceList(data.priceList);
           if (data.garmentList) setGarmentList(data.garmentList);
           if (data.serviceList) setServiceList(data.serviceList);
@@ -179,12 +171,14 @@ export default function NewReceiptPage() {
     }
   }
 
+  const theme = brandTheme(brandColor);
+
   if (status === "loading" || !settingsLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div
           className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"
-          style={{ borderColor: "#82C58A transparent #82C58A #82C58A" }}
+          style={{ borderColor: `${brandColor} transparent ${brandColor} ${brandColor}` }}
         />
       </div>
     );
@@ -213,12 +207,12 @@ export default function NewReceiptPage() {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center px-6"
-        style={{ background: `linear-gradient(135deg, ${brandColor}08 0%, ${brandColor}03 100%)` }}
+        style={{ background: theme.tint }}
       >
         <div className="animate-fade-up text-center" style={{ maxWidth: "28rem" }}>
           <div
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full text-4xl text-white"
-            style={{ backgroundColor: brandColor }}
+            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full text-4xl"
+            style={{ backgroundColor: theme.brand, color: theme.onBrand }}
           >
             ✓
           </div>
@@ -238,8 +232,8 @@ export default function NewReceiptPage() {
           <button
             type="button"
             onClick={resetForm}
-            className="rounded-2xl px-8 py-4 text-lg font-bold text-white shadow-lg"
-            style={{ backgroundColor: brandColor, boxShadow: `0 4px 20px ${brandColor}40` }}
+            className="rounded-2xl px-8 py-4 text-lg font-bold shadow-lg"
+            style={{ backgroundColor: theme.brand, color: theme.onBrand, boxShadow: `0 4px 20px ${theme.brand}40` }}
           >
             {t("order.newReceipt")}
           </button>
@@ -248,16 +242,14 @@ export default function NewReceiptPage() {
     );
   }
 
-  const bgTint = blendWithWhite(brandColor, 0.28);
-
   return (
-    <div style={{ background: bgTint, minHeight: '100vh' }}>
+    <div style={{ background: theme.tint, minHeight: '100vh' }}>
       {/* ═══ HEADER ═══ */}
-      <header className="pos-header" style={{ background: brandColor, borderBottom: 'none', color: 'white' }}>
+      <header className="pos-header" style={{ background: theme.bar, borderBottom: 'none', color: theme.barInk }}>
         <div className="pos-header-left">
-          <KemkvittoLogo color="white" size="sm" />
-          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>/</span>
-          <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.8125rem", fontWeight: 600 }}>
+          <KemkvittoLogo color={theme.barInk} size="sm" />
+          <span style={{ color: theme.barInk, opacity: 0.55, fontSize: "0.75rem" }}>/</span>
+          <span style={{ color: theme.barInk, fontSize: "0.8125rem", fontWeight: 600 }}>
             {businessName || session.user?.name}
           </span>
         </div>
@@ -273,7 +265,7 @@ export default function NewReceiptPage() {
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <div className="pos-layout">
           {/* LEFT PANEL */}
-          <div className="pos-left" style={{ background: bgTint }}>
+          <div className="pos-left" style={{ background: theme.tint }}>
             {/* Garment grid — fills available space */}
             <div style={{ minHeight: 0 }}>
               <GarmentGrid
