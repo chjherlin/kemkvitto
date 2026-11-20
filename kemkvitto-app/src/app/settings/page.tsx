@@ -7,6 +7,7 @@ import Link from "next/link";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
+import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
 const BRAND_COLORS = [
   "#82C58A", // grön (green)
@@ -120,7 +121,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [resetNumber, setResetNumber] = useState<number | "">("");
+  const [resetNumber, setResetNumber] = useState("0001");
   const [resetDone, setResetDone] = useState(false);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
@@ -139,6 +140,7 @@ export default function SettingsPage() {
         setBusinessName(data.businessName || "");
         setGarmentList(data.garmentList || []);
         setServiceList(data.serviceList || []);
+        setResetNumber(formatReceiptNumber(data.nextReceiptNumber ?? 1));
         setLoading(false);
       });
   }, [status]);
@@ -297,33 +299,35 @@ export default function SettingsPage() {
           </h2>
           <div className="flex items-center gap-3">
             <input
-              type="number"
-              min={1}
-              max={9999}
+              type="text"
+              inputMode="numeric"
               value={resetNumber}
-              onChange={(e) => {
-                if (!e.target.value) { setResetNumber(""); return; }
-                setResetNumber(Math.min(parseInt(e.target.value) || 1, 9999));
+              onChange={(e) => setResetNumber(e.target.value.replace(/[^\d]/g, ""))}
+              onBlur={() => {
+                if (!resetNumber) return;
+                setResetNumber(formatReceiptNumber(parseReceiptCounter(resetNumber)));
               }}
               placeholder={t("settings.receiptNumberPlaceholder")}
               className="touch-target flex-1 rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium font-receipt"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: "var(--border)", color: "#1c1917" }}
             />
             <button
               type="button"
               onClick={async () => {
                 if (!resetNumber) return;
+                const next = parseReceiptCounter(resetNumber);
                 await fetch("/api/receipts/reset-number", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ nextReceiptNumber: resetNumber }),
+                  body: JSON.stringify({ nextReceiptNumber: next }),
                 });
+                setResetNumber(formatReceiptNumber(next));
                 setResetDone(true);
                 setTimeout(() => setResetDone(false), 2000);
               }}
               disabled={!resetNumber}
               className="rounded-xl px-6 py-4 text-sm font-semibold text-white"
-              style={{ backgroundColor: resetNumber ? brandColor : "var(--border)" }}
+              style={{ backgroundColor: resetNumber ? brandColor : "var(--border)", minHeight: "48px" }}
             >
               {resetDone ? t("settings.receiptNumberReset") : t("settings.receiptNumberSet")}
             </button>

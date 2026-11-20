@@ -11,8 +11,9 @@ export async function POST(request: Request) {
 
   const washerId = (session.user as { id: string }).id;
   const { nextReceiptNumber } = await request.json();
+  const next = Number(nextReceiptNumber);
 
-  if (!nextReceiptNumber || nextReceiptNumber < 1) {
+  if (!Number.isInteger(next) || next < 1) {
     return NextResponse.json({ error: "Ogiltigt nummer" }, { status: 400 });
   }
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
 
   await supabase
     .from("washers")
-    .update({ next_receipt_number: nextReceiptNumber })
+    .update({ next_receipt_number: next })
     .eq("id", washerId);
 
   return NextResponse.json({ ok: true });

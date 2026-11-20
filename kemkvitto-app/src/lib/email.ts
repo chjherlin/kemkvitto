@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { pricesEnabled } from "./prices";
+import { formatReceiptNumber } from "./receipt-number";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -9,7 +10,7 @@ const EMAIL_FROM = process.env.EMAIL_FROM || "Kemkvitto <noreply@resend.dev>";
 
 interface Receipt {
   id: string;
-  receipt_number: number;
+  receipt_number: number | string;
   tag_number?: string | null;
   garments: Record<string, number | { qty: number; bet?: boolean }>;
   delivery_date: string;
@@ -52,6 +53,7 @@ function buildReceiptHTML(
   showPrices: boolean
 ): string {
   const brandColor = washer.brand_color || "#82C58A";
+  const receiptLabel = formatReceiptNumber(receipt.receipt_number);
   const vatAmount = Math.round(total * 0.25 / 1.25);
 
   const lineRows = lines
@@ -83,7 +85,7 @@ function buildReceiptHTML(
         <!-- Header -->
         <tr><td style="background:${brandColor};padding:24px;text-align:center;">
           <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.5px;">${washer.business_name}</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Kvitto #${receipt.receipt_number}</p>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Kvitto #${receiptLabel}</p>
         </td></tr>
 
         <!-- Customer info -->
@@ -192,7 +194,7 @@ export async function sendReceiptEmail(
     const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: receipt.customer_email,
-      subject: `Kvitto #${receipt.receipt_number} — ${businessName}`,
+      subject: `Kvitto #${formatReceiptNumber(receipt.receipt_number)} — ${businessName}`,
       html,
     });
     if (result.error) {
@@ -252,10 +254,10 @@ export async function sendReminderEmail(
       subject: `Påminnelse: Din kemtvätt är klar imorgon — ${businessName}`,
       html,
     });
-    console.log(`Reminder sent to ${receipt.customer_email} for receipt #${receipt.receipt_number}`);
+    console.log(`Reminder sent to ${receipt.customer_email} for receipt #${formatReceiptNumber(receipt.receipt_number)}`);
   } else {
     console.log("=== REMINDER (Resend not configured) ===");
-    console.log(`To: ${receipt.customer_email}, Receipt #${receipt.receipt_number}, ready ${receipt.delivery_date}`);
+    console.log(`To: ${receipt.customer_email}, Receipt #${formatReceiptNumber(receipt.receipt_number)}, ready ${receipt.delivery_date}`);
     console.log("========================================");
   }
 }

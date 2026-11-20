@@ -21,7 +21,7 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("washers")
-    .select("brand_color, price_list, business_name, garment_list, service_list")
+    .select("brand_color, price_list, business_name, garment_list, service_list, next_receipt_number")
     .eq("id", washerId)
     .single();
 
@@ -29,7 +29,7 @@ export async function GET() {
   if (error?.code === "42703" || error?.code === "PGRST204") {
     const fallback = await supabase
       .from("washers")
-      .select("brand_color, price_list, business_name")
+      .select("brand_color, price_list, business_name, next_receipt_number")
       .eq("id", washerId)
       .single();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,6 +52,7 @@ export async function GET() {
     businessName: raw.business_name,
     garmentList: ((raw.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
     serviceList: (raw.service_list as string[] | null) ?? DEFAULT_SERVICES,
+    nextReceiptNumber: raw.next_receipt_number ?? 1,
   });
 }
 

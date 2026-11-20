@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
+import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -33,6 +35,7 @@ export default function NewReceiptPage() {
   const { t } = useI18n();
 
   const [receiptNumber, setReceiptNumber] = useState(1);
+  const [numberDraft, setNumberDraft] = useState("0001");
   const [specialMode, setSpecialMode] = useState(false);
   const [specialNumber, setSpecialNumber] = useState<string>("");
 
@@ -65,7 +68,9 @@ export default function NewReceiptPage() {
       fetch("/api/receipts/next-number")
         .then((r) => r.json())
         .then((data) => {
-          setReceiptNumber(data.nextReceiptNumber);
+          const next = data.nextReceiptNumber ?? 1;
+          setReceiptNumber(next);
+          setNumberDraft(formatReceiptNumber(next));
           setBrandColor(data.brandColor || "#82C58A");
           if (data.priceList) setPriceList(data.priceList);
           if (data.garmentList) setGarmentList(data.garmentList);
@@ -78,9 +83,11 @@ export default function NewReceiptPage() {
 
   useEffect(() => {
     if (!showReceiptHelp) return;
-    function handler() { setShowReceiptHelp(false); }
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setShowReceiptHelp(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [showReceiptHelp]);
 
   // Order items derived from garments
@@ -115,7 +122,16 @@ export default function NewReceiptPage() {
     setGarments((prev) => ({ ...prev, [garment]: { ...prev[garment], qty } }));
   }, [handleRemove]);
 
-  const effectiveReceiptNumber: string | number = specialMode && specialNumber !== "" ? specialNumber : receiptNumber;
+  function commitCounter(raw = numberDraft) {
+    const next = parseReceiptCounter(raw);
+    setReceiptNumber(next);
+    setNumberDraft(formatReceiptNumber(next));
+    return next;
+  }
+
+  const effectiveReceiptNumber: string = specialMode && specialNumber !== ""
+    ? specialNumber
+    : formatReceiptNumber(parseReceiptCounter(numberDraft));
 
   async function handleSubmit() {
     if (Object.keys(garments).length === 0 || !deliveryDate) return;
@@ -128,8 +144,9 @@ export default function NewReceiptPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           receiptNumber: effectiveReceiptNumber,
+          oneTime: specialMode,
           // Special receipts don't advance the regular counter
-          nextReceiptNumber: specialMode ? receiptNumber : receiptNumber + 1,
+          nextReceiptNumber: specialMode ? parseReceiptCounter(numberDraft) : parseReceiptCounter(numberDraft) + 1,
           tagNumber: null,
           garments,
           deliveryDate,
@@ -151,7 +168,10 @@ export default function NewReceiptPage() {
       }
 
       const { emailSent, nextReceiptNumber } = await res.json();
-      if (!specialMode && nextReceiptNumber) setReceiptNumber(nextReceiptNumber);
+      if (!specialMode && nextReceiptNumber) {
+        setReceiptNumber(nextReceiptNumber);
+        setNumberDraft(formatReceiptNumber(nextReceiptNumber));
+      }
       setSuccessInfo({ receiptNum: effectiveReceiptNumber, emailSent, customerName });
     } catch (err) {
       setSubmitError(`Nätverksfel: ${err instanceof Error ? err.message : "okänt"}`);
@@ -329,75 +349,86 @@ export default function NewReceiptPage() {
               {/* Section label + ? help inline */}
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "0.375rem" }}>
                 <div className="pos-section-label" style={{ margin: 0 }}>{t("nav.receipt")} nr</div>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setShowReceiptHelp((p) => !p); }}
-                    title="Hjälp"
-                    style={{
-                      width: "1.25rem",
-                      height: "1.25rem",
-                      borderRadius: "50%",
-                      border: "1.5px solid var(--border)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-muted)",
-                      fontSize: "0.7rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >?</button>
-                  {showReceiptHelp && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: 0,
-                        top: "calc(100% + 6px)",
-                        zIndex: 100,
-                        width: "16rem",
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "0.75rem",
-                        padding: "0.75rem",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-                        fontSize: "0.8rem",
-                        color: "var(--text-muted)",
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {t("receipt.helpText")}
-                      <br /><br />
-                      <strong>{t("receipt.oneTimeBtn")}</strong> — {t("receipt.helpOneTime")}
-                      <br /><br />
-                      <strong>{t("receipt.resetBtn")}</strong> — {t("receipt.helpReset")}
-                    </div>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptHelp((p) => !p)}
+                  title="Hjälp"
+                  aria-expanded={showReceiptHelp}
+                  style={{
+                    width: "1.25rem",
+                    height: "1.25rem",
+                    borderRadius: "50%",
+                    border: "1.5px solid var(--border)",
+                    background: "var(--bg-card)",
+                    color: "var(--text-muted)",
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >?</button>
               </div>
+              {showReceiptHelp && typeof document !== "undefined" && createPortal(
+                <div
+                  role="presentation"
+                  onClick={() => setShowReceiptHelp(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(28,25,23,0.35)" }}
+                >
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t("nav.receipt")}
+                    onClick={(event) => event.stopPropagation()}
+                    style={{
+                      position: "fixed",
+                      left: "50%",
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 81,
+                      width: "min(20rem, calc(100vw - 2rem))",
+                      background: "#fff",
+                      border: "1px solid var(--border)",
+                      borderRadius: "0.75rem",
+                      padding: "1rem",
+                      boxShadow: "0 12px 40px rgba(0,0,0,0.2)",
+                      fontSize: "0.9rem",
+                      color: "#1c1917",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {t("receipt.helpText")}
+                    <br /><br />
+                    <strong>{t("receipt.oneTimeBtn")}</strong> — {t("receipt.helpOneTime")}
+                    <br /><br />
+                    <strong>{t("receipt.resetBtn")}</strong> — {t("receipt.helpReset")}
+                  </div>
+                </div>,
+                document.body
+              )}
               {/* Row 1: stepper */}
               <div className="pos-counter-row">
                 <button
                   type="button"
                   className="pos-counter-btn"
-                  onClick={() => setReceiptNumber((p) => Math.max(1, p - 1))}
+                  onClick={() => commitCounter(String(Math.max(1, parseReceiptCounter(numberDraft) - 1)))}
                   title="−"
                 >−</button>
                 <input
-                  type="number"
-                  min={1}
-                  max={99999}
-                  value={receiptNumber}
-                  onChange={(e) => setReceiptNumber(Math.min(99999, parseInt(e.target.value) || 1))}
+                  type="text"
+                  inputMode="numeric"
+                  value={numberDraft}
+                  onChange={(e) => setNumberDraft(e.target.value)}
+                  onBlur={() => commitCounter()}
                   className="pos-counter-input"
                   style={{ color: specialMode ? "var(--text-light)" : brandColor, textDecoration: specialMode ? "line-through" : "none", opacity: specialMode ? 0.4 : 1 }}
                 />
                 <button
                   type="button"
                   className="pos-counter-btn"
-                  onClick={() => setReceiptNumber((p) => Math.min(99999, p + 1))}
+                  onClick={() => commitCounter(String(parseReceiptCounter(numberDraft) + 1))}
                   title="Öka"
                 >+</button>
               </div>
@@ -410,7 +441,7 @@ export default function NewReceiptPage() {
                     await fetch("/api/receipts/reset-number", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ nextReceiptNumber: receiptNumber }),
+                      body: JSON.stringify({ nextReceiptNumber: commitCounter() }),
                     });
                     setResetSaved(true);
                     setTimeout(() => setResetSaved(false), 1500);
@@ -442,7 +473,7 @@ export default function NewReceiptPage() {
                     placeholder="Ange specialnummer..."
                     autoFocus
                   />
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-light)", whiteSpace: "nowrap" }}>→ återgår till #{receiptNumber}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-light)", whiteSpace: "nowrap" }}>→ återgår till #{formatReceiptNumber(parseReceiptCounter(numberDraft))}</span>
                 </div>
               )}
             </div>
