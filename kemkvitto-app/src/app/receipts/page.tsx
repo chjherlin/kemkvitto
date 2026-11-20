@@ -7,10 +7,11 @@ import Link from "next/link";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
+import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
 
 interface Receipt {
   id: string;
-  receipt_number: number;
+  receipt_number: string;
   tag_number?: string | null;
   garments: Record<string, number | { qty: number; bet: boolean }>;
   delivery_date: string;
@@ -55,6 +56,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
   const [customerEmail, setCustomerEmail] = useState(receipt.customer_email ?? "");
   const [comment, setComment] = useState(receipt.comment ?? "");
   const [addGarment, setAddGarment] = useState("");
+  const shownNumber = formatReceiptNumber(receipt.receipt_number);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -91,28 +93,64 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
     setSaving(false);
   }
 
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const previous = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    return () => {
+      body.style.overflow = previous.overflow;
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.width = previous.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", overscrollBehavior: "none" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         style={{
           background: "var(--bg-card)",
           borderRadius: "1.25rem 1.25rem 0 0",
           width: "100%",
           maxWidth: "640px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          padding: "1.5rem",
+          maxHeight: "90dvh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
           boxShadow: "0 -4px 32px rgba(0,0,0,0.15)",
         }}
       >
+        <div
+          style={{
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
+            flex: "1 1 auto",
+            minHeight: 0,
+            maxHeight: "90dvh",
+            padding: "1.5rem 1.5rem 0.75rem",
+          }}
+        >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
           <div>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "1.25rem", fontWeight: 700, color: brandColor }}>
-              #{receipt.receipt_number}
+              #{shownNumber}
             </span>
             {receipt.customer_name && (
               <span style={{ marginLeft: "0.75rem", fontWeight: 600, color: "var(--text)" }}>{receipt.customer_name}</span>
@@ -256,17 +294,24 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
           </div>
         )}
 
-        {/* Save error */}
         {saveError && (
           <p style={{ color: "var(--danger)", fontSize: "0.8125rem", marginBottom: "0.5rem", textAlign: "center" }}>{saveError}</p>
         )}
-
-        {/* Actions */}
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        </div>
+        <div
+          style={{
+            flex: "0 0 auto",
+            display: "flex",
+            gap: "0.75rem",
+            padding: "0.75rem 1.5rem 1.25rem",
+            borderTop: "1px solid var(--border)",
+            background: "var(--bg-card)",
+          }}
+        >
           {confirmDelete ? (
             <>
               <span style={{ flex: 1, fontSize: "0.8125rem", color: "var(--danger)", display: "flex", alignItems: "center" }}>
-                Ta bort kvitto #{receipt.receipt_number}?
+                Ta bort kvitto #{shownNumber}?
               </span>
               <button type="button" onClick={() => setConfirmDelete(false)}
                 style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem" }}>
@@ -280,15 +325,15 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
           ) : (
             <>
               <button type="button" onClick={() => setConfirmDelete(true)}
-                style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.8125rem" }}>
+                style={{ minHeight: "48px", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.8125rem" }}>
                 Ta bort
               </button>
               <button type="button" onClick={onClose}
-                style={{ flex: 1, padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem" }}>
+                style={{ flex: 1, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem" }}>
                 Avbryt
               </button>
               <button type="button" onClick={handleSave} disabled={saving}
-                style={{ flex: 2, padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: "white", cursor: saving ? "default" : "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
+                style={{ flex: 2, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: "white", cursor: saving ? "default" : "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
                 {saving ? "Sparar…" : "Spara ändringar"}
               </button>
             </>
@@ -387,7 +432,7 @@ export default function ReceiptsPage() {
     : receipts;
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === "number") return b.receipt_number - a.receipt_number;
+    if (sortBy === "number") return compareReceiptNumbersDesc(a.receipt_number, b.receipt_number);
     return new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime();
   });
 
@@ -502,7 +547,7 @@ export default function ReceiptsPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <span className="font-receipt text-lg font-bold" style={{ color: brandColor }}>
-                            #{r.receipt_number}
+                            #{formatReceiptNumber(r.receipt_number)}
                           </span>
                           {r.customer_name && (
                             <span className="ml-3 text-sm font-medium" style={{ color: "var(--text)" }}>

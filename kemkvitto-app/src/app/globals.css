@@ -216,7 +216,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 .pos-counter-input {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
-  width: 5rem;
+  width: 6.5rem;
   text-align: center;
   font-size: 1.25rem;
   font-weight: 700;

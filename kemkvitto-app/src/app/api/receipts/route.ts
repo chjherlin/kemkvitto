@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
+import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
 // These columns don't exist on all deployments — stripped and retried if insert fails
 const OPTIONAL_COLUMNS = ["customer_name", "customer_phone", "drop_off_date", "amount_total", "tag_number", "services"];
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
 
   const washerId = (session.user as { id: string }).id;
   const {
-    receiptNumber, nextReceiptNumber, tagNumber, garments, deliveryDate, dropOffDate,
+    receiptNumber, nextReceiptNumber, oneTime, tagNumber, garments, deliveryDate, dropOffDate,
     comment, customerName, customerPhone, customerEmail, amountTotal, services,
   } = await request.json();
 
@@ -28,9 +29,13 @@ export async function POST(request: Request) {
 
   const supabase = createServiceClient();
 
+  const storedReceiptNumber = oneTime
+    ? String(receiptNumber)
+    : formatReceiptNumber(parseReceiptCounter(String(receiptNumber)));
+
   const insertData: Record<string, unknown> = {
     washer_id: washerId,
-    receipt_number: receiptNumber,
+    receipt_number: storedReceiptNumber,
     tag_number: tagNumber || null,
     garments,
     delivery_date: deliveryDate,
