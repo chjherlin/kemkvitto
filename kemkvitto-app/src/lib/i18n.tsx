@@ -13,6 +13,7 @@ const translations = {
   "nav.receipt": { sv: "Kvitto", en: "Receipt", da: "Kvittering", no: "Kvittering" },
   "nav.tag": { sv: "Märke", en: "Tag", da: "Mærke", no: "Merke" },
   "nav.back": { sv: "← Tillbaka", en: "← Back", da: "← Tilbage", no: "← Tilbake" },
+  "nav.productPage": { sv: "Produktsidan", en: "Product page", da: "Produktsiden", no: "Produktsiden" },
 
   // Receipt creation
   "receipt.garments": { sv: "Plagg", en: "Garments", da: "Beklædning", no: "Plagg" },
@@ -34,8 +35,19 @@ const translations = {
   "receipts.today": { sv: "Idag", en: "Today", da: "I dag", no: "I dag" },
   "receipts.sortDate": { sv: "Datum", en: "Date", da: "Dato", no: "Dato" },
   "receipts.sortNumber": { sv: "Nummer", en: "Number", da: "Nummer", no: "Nummer" },
-  "receipts.search": { sv: "Sök kvitto...", en: "Search receipt...", da: "Søg kvittering...", no: "Søk kvittering..." },
+  "receipts.search": { sv: "Sök på namn, e-post eller nummer", en: "Search by name, email or number", da: "Søg på navn, e-mail eller nummer", no: "Søk på navn, e-post eller nummer" },
   "receipts.noResults": { sv: "Inga kvitton matchar sökningen", en: "No receipts match the search", da: "Ingen kvitteringer matcher søgningen", no: "Ingen kvitteringer matcher søket" },
+  "receipts.pickedUpNote": {
+    sv: "Plagg räknas som hämtade av sig själva. Har något stått kvar kan du skicka en påminnelse.",
+    en: "Garments count as picked up on their own. If something is still here, you can send a reminder.",
+    da: "Tøj tæller som afhentet af sig selv. Hvis noget stadig står, kan du sende en påmindelse.",
+    no: "Plagg regnes som hentet av seg selv. Har noe blitt stående, kan du sende en påminnelse.",
+  },
+  "receipts.shouldBeReady": { sv: "borde vara klar", en: "should be ready", da: "burde være klar", no: "burde være klar" },
+  "receipts.sendReminder": { sv: "Skicka påminnelse", en: "Send reminder", da: "Send påmindelse", no: "Send påminnelse" },
+  "receipts.sendAgain": { sv: "Skicka igen", en: "Send again", da: "Send igen", no: "Send igjen" },
+  "receipts.reminderSent": { sv: "Påminnelse skickad", en: "Reminder sent", da: "Påmindelse sendt", no: "Påminnelse sendt" },
+  "receipts.reminderFailed": { sv: "Påminnelsen kunde inte skickas.", en: "The reminder could not be sent.", da: "Påmindelsen kunne ikke sendes.", no: "Påminnelsen kunne ikke sendes." },
 
   // Settings
   "settings.title": { sv: "Inställningar", en: "Settings", da: "Indstillinger", no: "Innstillinger" },
