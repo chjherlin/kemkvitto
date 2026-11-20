@@ -9,14 +9,15 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 import { defaultLandingBrand, readBrandChoice, writeBrandChoice } from "@/lib/brand-choice";
+import { formatEur, lowestMonthlyPriceEur, pricingConfig } from "@/lib/pricing";
 
 const PREVIEW_TILES = [
-  { name: "Kavaj", price: "200 kr", selected: false },
-  { name: "Byxor", price: "150 kr", selected: false },
-  { name: "Kjol", price: "150 kr", selected: true },
-  { name: "Jacka", price: "250 kr", selected: false },
-  { name: "Matta", price: "400 kr", selected: false },
-  { name: "Skjorta", price: "80 kr", selected: false },
+  { name: "Kavaj", selected: false },
+  { name: "Byxor", selected: false },
+  { name: "Kjol", selected: true },
+  { name: "Jacka", selected: false },
+  { name: "Matta", selected: false },
+  { name: "Skjorta", selected: false },
 ];
 
 export default function LandingPage() {
@@ -162,7 +163,7 @@ export default function LandingPage() {
               className="mt-3 flex w-full items-center justify-center rounded-xl border-2 text-base font-bold"
               style={{ borderColor: theme.brand, color: "#1c1917", minHeight: "60px" }}
             >
-              {t("landing.createAccount")}
+              {t("landing.createAccount")} {pricingConfig.trialDays} {t("landing.trialDays")}
             </Link>
           </form>
         </section>
@@ -241,7 +242,8 @@ export default function LandingPage() {
       </main>
 
       <section className="mt-10 px-4 py-12 text-center" style={{ background: theme.brand, color: theme.onBrand }}>
-        <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--font-jost), sans-serif" }}>{t("landing.ctaTitle")}</h2>
+        <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--font-jost), sans-serif" }}>{t("landing.ctaTitle")} {pricingConfig.trialDays} {t("landing.trialDays")}</h2>
+        <p className="mt-3 text-lg font-receipt">{t("landing.priceFrom")} {formatEur(lowestMonthlyPriceEur())} {t("landing.perMonth")}</p>
         <Link
           href="/register"
           className="mt-6 inline-flex items-center justify-center rounded-xl px-8 text-base font-bold"
@@ -299,7 +301,6 @@ function Preview({
               style={{ border: tile.selected ? `2px solid ${theme.brand}` : "1px solid #e7e5e4", background: tile.selected ? theme.tint : "#fff" }}
             >
               <div className="text-base">{tGarment(tile.name)}</div>
-              <div className="font-receipt text-base">{tile.price}</div>
             </div>
           ))}
         </div>
