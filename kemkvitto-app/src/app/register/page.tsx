@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
@@ -8,6 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { countries, formatEur, monthlyPriceEur } from "@/lib/pricing";
 import { brandTheme } from "@/lib/brand";
+import { readBrandChoice } from "@/lib/brand-choice";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +19,11 @@ export default function RegisterPage() {
   const [countryCode, setCountryCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [brandHex, setBrandHex] = useState("");
+
+  useEffect(() => {
+    setBrandHex(readBrandChoice());
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +51,7 @@ export default function RegisterPage() {
     router.push("/login?registered=1");
   }
 
-  const theme = brandTheme();
+  const theme = brandTheme(brandHex || undefined);
   const logoOnLight = theme.barInk.toLowerCase() === "#ffffff" ? theme.bar : theme.barInk;
 
   return (
