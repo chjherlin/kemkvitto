@@ -4,6 +4,16 @@ export function utcTodayISO(now = new Date()): string {
   return now.toISOString().split("T")[0];
 }
 
+/** Calendar date YYYY-MM-DD in a timezone. en-CA formats that way. */
+export function calendarDate(now: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
 /** The promised day has passed when it is strictly before today (YYYY-MM-DD). */
 export function isPromisedDatePast(
   deliveryDate: string | null | undefined,

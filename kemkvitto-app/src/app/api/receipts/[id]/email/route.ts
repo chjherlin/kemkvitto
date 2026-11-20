@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
+import { loadMailWasher } from "@/lib/mail-washer";
 
 export async function POST(
   request: Request,
@@ -31,13 +32,9 @@ export async function POST(
   }
 
   // Fetch washer info for branding and pricing
-  const { data: washer } = await supabase
-    .from("washers")
-    .select("business_name, brand_color, price_list")
-    .eq("id", receipt.washer_id)
-    .single();
+  const washer = await loadMailWasher(supabase, receipt.washer_id);
 
-  await sendReceiptEmail(receipt, washer ?? undefined);
+  await sendReceiptEmail(receipt, washer);
 
   return NextResponse.json({ ok: true });
 }
