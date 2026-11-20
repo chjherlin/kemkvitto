@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PALETTE, STRENGTHS, applyStrength, barOf, brandTheme, onBrand, INK_DARK, INK_LIGHT } from "./brand.ts";
+import { PALETTE, STRENGTHS, applyStrength, barOf, brandTheme, canonicalBrandHex, onBrand, INK_DARK, INK_LIGHT } from "./brand.ts";
 
 test("every palette colour and strength produces a hex, and only Gul uses a dark bar logo", () => {
   const rows: string[] = [];
@@ -34,6 +34,14 @@ test("strong blue is the landing default", () => {
   const blue = PALETTE.find((color) => color.id === "blue");
   assert.ok(blue);
   assert.equal(applyStrength(blue.hex, "strong"), "#319ae8");
+});
+
+test("registration keeps a palette colour and falls back to strong blue", () => {
+  const strongBlue = applyStrength(PALETTE.find((color) => color.id === "blue")!.hex, "strong");
+  assert.equal(canonicalBrandHex(strongBlue), strongBlue);
+  assert.equal(canonicalBrandHex("#82C58A"), "#82c58a");
+  assert.equal(canonicalBrandHex("nope"), strongBlue);
+  assert.equal(canonicalBrandHex("#000000"), strongBlue);
 });
 
 test("a strength-shifted yellow still uses the yellow bar", () => {

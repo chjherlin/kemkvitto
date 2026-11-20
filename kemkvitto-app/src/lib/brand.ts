@@ -196,6 +196,14 @@ export function strengthOf(stored: string): Strength | null {
   return null;
 }
 
+/** One of the 30 palette×strength hexes, or strong blue when the value is anything else. */
+export function canonicalBrandHex(input: unknown): string {
+  const raw = typeof input === "string" ? input.trim().toLowerCase() : "";
+  if (/^#[0-9a-f]{6}$/.test(raw) && strengthOf(raw)) return raw;
+  const blue = PALETTE.find((color) => color.id === "blue") ?? PALETTE[0];
+  return applyStrength(blue.hex, "strong");
+}
+
 export function brandTheme(stored?: string | null): BrandTheme {
   const valid = stored && /^#[0-9a-fA-F]{6}$/.test(stored.trim());
   const brand = valid ? stored.trim().toLowerCase() : DEFAULT_BRAND;
