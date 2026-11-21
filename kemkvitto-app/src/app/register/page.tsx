@@ -7,6 +7,7 @@ import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { countries, formatEur, monthlyPriceEur } from "@/lib/pricing";
+import { brandTheme } from "@/lib/brand";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -44,14 +45,17 @@ export default function RegisterPage() {
     router.push("/login?registered=1");
   }
 
+  const theme = brandTheme();
+  const logoOnLight = theme.barInk.toLowerCase() === "#ffffff" ? theme.bar : theme.barInk;
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: "var(--bg)" }}>
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: theme.tint }}>
       <div className="absolute right-4 top-4">
         <LanguageToggle />
       </div>
       <div className="animate-fade-up w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4">
-          <KemkvittoLogo size="lg" />
+          <KemkvittoLogo size="lg" color={logoOnLight} />
           <p style={{ color: "var(--text-muted)" }}>
             {t("auth.registerSubtitle")}
           </p>
@@ -116,8 +120,8 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="touch-target w-full rounded-xl bg-[#0891b2] px-4 py-4 text-lg font-bold text-white shadow-lg disabled:opacity-50"
-            style={{ boxShadow: "0 4px 20px #0891b240" }}
+            className="touch-target w-full rounded-xl px-4 py-4 text-lg font-bold shadow-lg disabled:opacity-50"
+            style={{ backgroundColor: theme.brand, color: theme.onBrand, boxShadow: `0 4px 20px ${theme.brand}40` }}
           >
             {loading ? t("auth.registering") : t("auth.register")}
           </button>
@@ -125,7 +129,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
           {t("auth.hasAccount")}{" "}
-          <Link href="/login" className="font-semibold" style={{ color: "#0891b2" }}>
+          <Link href="/login" className="font-semibold" style={{ color: theme.brand }}>
             {t("auth.login")}
           </Link>
         </p>

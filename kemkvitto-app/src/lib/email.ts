@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
+import { DEFAULT_BRAND, brandTheme } from "./brand";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -52,7 +53,8 @@ function buildReceiptHTML(
   total: number,
   showPrices: boolean
 ): string {
-  const brandColor = washer.brand_color || "#82C58A";
+  const theme = brandTheme(washer.brand_color || DEFAULT_BRAND);
+  const brandColor = theme.brand;
   const receiptLabel = formatReceiptNumber(receipt.receipt_number);
   const vatAmount = Math.round(total * 0.25 / 1.25);
 
@@ -83,9 +85,9 @@ function buildReceiptHTML(
       <table width="400" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e7e5e4;">
 
         <!-- Header -->
-        <tr><td style="background:${brandColor};padding:24px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.5px;">${washer.business_name}</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Kvitto #${receiptLabel}</p>
+        <tr><td style="background:${theme.brand};padding:24px;text-align:center;color:${theme.onBrand};">
+          <h1 style="margin:0;color:${theme.onBrand};font-size:20px;font-weight:700;letter-spacing:0.5px;">${washer.business_name}</h1>
+          <p style="margin:8px 0 0;color:${theme.onBrand};font-size:14px;">Kvitto #${receiptLabel}</p>
         </td></tr>
 
         <!-- Customer info -->
@@ -182,7 +184,7 @@ export async function sendReceiptEmail(
     : calculateTotal(lines);
 
   const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? "#82C58A";
+  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
 
   const html = buildReceiptHTML(receipt, {
     business_name: businessName,
@@ -224,7 +226,7 @@ export async function sendReminderEmail(
     : calculateTotal(lines);
 
   const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? "#82C58A";
+  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
 
   const fullHtml = buildReceiptHTML(
     receipt,
@@ -276,7 +278,7 @@ export async function sendDateUpdateEmail(
     : calculateTotal(lines);
 
   const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? "#82C58A";
+  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
   const isSooner = newDate < oldDate;
 
   const updatedReceipt = { ...receipt, delivery_date: newDate };

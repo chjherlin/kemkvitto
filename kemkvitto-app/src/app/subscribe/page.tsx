@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { formatEur } from "@/lib/pricing";
+import { brandTheme } from "@/lib/brand";
 
 interface StatusResponse {
   missingColumns?: boolean;
@@ -109,6 +110,7 @@ export default function SubscribePage() {
     return <div className="flex min-h-screen items-center justify-center" style={{ color: "#1c1917" }}>…</div>;
   }
 
+  const theme = brandTheme();
   const price = interval === "year" ? info.yearlyEur : info.monthlyEur;
   const countryName = info.countries?.find((c) => c.code === info.countryCode)?.name?.[locale]
     || info.countries?.find((c) => c.code === info.countryCode)?.name?.en;
@@ -202,15 +204,15 @@ export default function SubscribePage() {
           type="button"
           onClick={startCheckout}
           disabled={loading || !info.countryCode || info.missingColumns}
-          className="rounded-xl px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
-          style={{ backgroundColor: "#0891b2", minHeight: "48px" }}
+          className="rounded-xl px-4 py-4 text-lg font-bold disabled:opacity-50"
+          style={{ backgroundColor: theme.brand, color: theme.onBrand, minHeight: "48px" }}
         >
           {t("subscribe.start")}
         </button>
       )}
 
       {info.allowsAccess && (
-        <Link href="/" className="rounded-xl px-4 py-4 text-center text-lg font-bold text-white" style={{ backgroundColor: "#0891b2", minHeight: "48px" }}>
+        <Link href="/" className="rounded-xl px-4 py-4 text-center text-lg font-bold" style={{ backgroundColor: theme.brand, color: theme.onBrand, minHeight: "48px" }}>
           {t("subscribe.continue")}
         </Link>
       )}

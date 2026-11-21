@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
+import { DEFAULT_BRAND } from "@/lib/brand";
 
 const DEFAULT_GARMENTS = [
   "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka", "Kjol",
@@ -38,7 +39,7 @@ export async function GET() {
   const d = data as Record<string, unknown>;
   return NextResponse.json({
     nextReceiptNumber: d?.next_receipt_number ?? 1,
-    brandColor: d?.brand_color ?? "#0891b2",
+    brandColor: d?.brand_color ?? DEFAULT_BRAND,
     priceList: d?.price_list ?? {},
     businessName: d?.business_name ?? "",
     garmentList: ((d?.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),

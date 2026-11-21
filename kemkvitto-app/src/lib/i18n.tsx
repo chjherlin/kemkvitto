@@ -42,6 +42,10 @@ const translations = {
   "settings.subscription": { sv: "Prenumeration och betalning", en: "Subscription and billing", da: "Abonnement og betaling", no: "Abonnement og betaling" },
   "settings.businessName": { sv: "Företagsnamn", en: "Business name", da: "Virksomhedsnavn", no: "Bedriftsnavn" },
   "settings.brandColor": { sv: "Kvittofärg", en: "Receipt color", da: "Kvitteringsfarve", no: "Kvitteringsfarge" },
+  "settings.strength": { sv: "Styrka", en: "Strength", da: "Styrke", no: "Styrke" },
+  "settings.strengthDamped": { sv: "Dämpad", en: "Soft", da: "Dæmpet", no: "Dempet" },
+  "settings.strengthStandard": { sv: "Standard", en: "Standard", da: "Standard", no: "Standard" },
+  "settings.strengthStrong": { sv: "Stark", en: "Strong", da: "Stærk", no: "Sterk" },
   "settings.usePrices": { sv: "Använd priser", en: "Use prices", da: "Brug priser", no: "Bruk priser" },
   "settings.usePricesHint": {
     sv: "Avstängt döljer priser överallt. Siffrorna du har skrivit in sparas.",

@@ -7,6 +7,7 @@ import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
+import { brandTheme } from "@/lib/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,19 +50,21 @@ export default function LoginPage() {
     }
   }
 
+  const theme = brandTheme();
+
   return (
-    <div className="flex min-h-screen flex-col" style={{ backgroundColor: "#e8edf0" }}>
+    <div className="flex min-h-screen flex-col" style={{ backgroundColor: theme.tint }}>
       <div className="absolute right-4 top-4 z-10">
-        <LanguageToggle />
+        <LanguageToggle color={theme.barInk} />
       </div>
 
       {/* Cyan header banner */}
       <div
         className="flex flex-col items-center px-6 py-10"
-        style={{ backgroundColor: "#0891b2" }}
+        style={{ backgroundColor: theme.bar, color: theme.barInk }}
       >
-        <KemkvittoLogo size="lg" color="white" />
-        <div className="mt-5 space-y-1 text-center text-base font-medium text-white" style={{ lineHeight: 1.7 }}>
+        <KemkvittoLogo size="lg" color={theme.barInk} />
+        <div className="mt-5 space-y-1 text-center text-base font-medium" style={{ lineHeight: 1.7, color: theme.barInk }}>
           <p>- {locale === "sv" ? "Kundkvitto på papper" : locale === "en" ? "Customer receipt on paper" : "Kundekvittering på papir"} <strong style={{ fontWeight: 800 }}>{locale === "sv" ? "OCH" : locale === "en" ? "AND" : "OG"}</strong> {locale === "sv" ? "som e-post." : locale === "en" ? "as e-mail." : "som e-post."}</p>
           <p>- {locale === "sv" ? "Aldrig mer ett bortappat kvitto!" : locale === "en" ? "Never lose a receipt again!" : "Aldrig mere et tabt kvittering!"}</p>
         </div>
@@ -106,8 +109,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="touch-target w-full rounded-xl px-4 py-4 text-lg font-bold text-white disabled:opacity-50"
-              style={{ backgroundColor: "#5b8a9f" }}
+              className="touch-target w-full rounded-xl px-4 py-4 text-lg font-bold disabled:opacity-50"
+              style={{ backgroundColor: theme.brand, color: theme.onBrand }}
             >
               {loading ? t("auth.loggingIn") : t("auth.login")}
             </button>
@@ -115,7 +118,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
             {t("auth.noAccount")}{" "}
-            <Link href="/register" className="font-semibold" style={{ color: "#0891b2" }}>
+            <Link href="/register" className="font-semibold" style={{ color: theme.brand }}>
               {t("auth.register")}
             </Link>
           </p>
