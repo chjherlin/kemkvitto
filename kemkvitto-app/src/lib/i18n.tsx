@@ -171,7 +171,6 @@ const translations = {
   "order.empty": { sv: "Tryck på plagg till vänster", en: "Tap a garment on the left", da: "Tryk på beklædning til venstre", no: "Trykk på plagg til venstre" },
   "order.serviceTotal": { sv: "Tjänster", en: "Services", da: "Tjenester", no: "Tjenester" },
   "order.total": { sv: "Summa", en: "Total", da: "Total", no: "Total" },
-  "order.vat": { sv: "varav moms (25%)", en: "incl. VAT (25%)", da: "heraf moms (25%)", no: "herav mva (25%)" },
   "order.items": { sv: "plagg", en: "items", da: "stk", no: "stk" },
   "order.submit": { sv: "Skicka till kund ▶", en: "Send to customer ▶", da: "Send til kunde ▶", no: "Send til kunde ▶" },
   "order.submitSave": { sv: "Spara kvitto ▶", en: "Save receipt ▶", da: "Gem kvittering ▶", no: "Lagre kvittering ▶" },

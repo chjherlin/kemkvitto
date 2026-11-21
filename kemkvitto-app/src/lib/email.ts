@@ -56,7 +56,6 @@ function buildReceiptHTML(
   const theme = brandTheme(washer.brand_color || DEFAULT_BRAND);
   const brandColor = theme.brand;
   const receiptLabel = formatReceiptNumber(receipt.receipt_number);
-  const vatAmount = Math.round(total * 0.25 / 1.25);
 
   const lineRows = lines
     .map((l) => {
@@ -145,9 +144,6 @@ function buildReceiptHTML(
             <tr>
               <td style="color:#1c1917;font-size:16px;font-weight:700;">TOTALT</td>
               <td style="text-align:right;color:${brandColor};font-size:20px;font-weight:700;font-family:'Courier New',monospace;">${total} kr</td>
-            </tr>
-            <tr>
-              <td colspan="2" style="color:#a8a29e;font-size:11px;padding-top:4px;">varav moms (25%): ${vatAmount} kr</td>
             </tr>
           </table>
         </td></tr>` : ""}
