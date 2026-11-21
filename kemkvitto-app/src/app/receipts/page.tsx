@@ -8,6 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
+import { formatLaundryMoney } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, brandTheme, onBrand } from "@/lib/brand";
 
 interface Receipt {
@@ -37,12 +38,13 @@ interface EditModalProps {
   garmentList: string[];
   priceList: Record<string, number>;
   showPrices: boolean;
+  countryCode?: string | null;
   onSave: (updated: Partial<Receipt>) => Promise<boolean>;
   onDelete: () => void;
   onClose: () => void;
 }
 
-function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, onSave, onDelete, onClose }: EditModalProps) {
+function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, countryCode = null, onSave, onDelete, onClose }: EditModalProps) {
   const { t, tGarment } = useI18n();
   const [garments, setGarments] = useState<Record<string, number>>(() => {
     const g: Record<string, number> = {};
@@ -233,7 +235,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
                   }}
                 >
                   {active && "✓ "}{t(`service.${svc}` as Parameters<typeof t>[0])}
-                  {showPrices && priceList[svcNameMap[svc]] ? ` ${priceList[svcNameMap[svc]]} kr` : ""}
+                  {showPrices && priceList[svcNameMap[svc]] ? ` ${formatLaundryMoney(priceList[svcNameMap[svc]], countryCode)}` : ""}
                 </button>
               );
             })}
@@ -291,7 +293,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, on
         {/* Total */}
         {showPrices && grandTotal > 0 && (
           <div style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Totalt: <span style={{ fontWeight: 700, color: brandColor }}>{grandTotal} kr</span>
+            Totalt: <span className="font-receipt" style={{ fontWeight: 700, fontSize: "1rem", color: brandColor }}>{formatLaundryMoney(grandTotal, countryCode)}</span>
           </div>
         )}
 
@@ -357,6 +359,7 @@ export default function ReceiptsPage() {
   const showPrices = pricesEnabled(priceList);
   const theme = brandTheme(brandColor);
   const [garmentList, setGarmentList] = useState<string[]>([]);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -380,6 +383,7 @@ export default function ReceiptsPage() {
         if (d.brandColor) setBrandColor(d.brandColor);
         if (d.priceList) setPriceList(d.priceList);
         if (d.garmentList) setGarmentList(d.garmentList);
+        setCountryCode(d.countryCode ?? null);
       });
 
     loadReceipts().then(() => setLoading(false));
@@ -614,6 +618,7 @@ export default function ReceiptsPage() {
           garmentList={garmentList}
           priceList={priceList}
           showPrices={showPrices}
+          countryCode={countryCode}
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={() => setEditingReceipt(null)}

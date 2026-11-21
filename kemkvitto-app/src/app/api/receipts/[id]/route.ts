@@ -71,7 +71,7 @@ export async function PATCH(
     try {
       const { data: washer } = await supabase
         .from("washers")
-        .select("business_name, brand_color, price_list")
+        .select("business_name, brand_color, price_list, country_code")
         .eq("id", washerId)
         .single();
 

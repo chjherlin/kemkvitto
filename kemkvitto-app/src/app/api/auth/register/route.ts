@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { createServiceClient } from "@/lib/supabase";
 import { isSoldCountry } from "@/lib/pricing";
 import { normalizeLocale } from "@/lib/subscription-notices";
-import { DEFAULT_GARMENTS, DEFAULT_PRICE_LIST, DEFAULT_SERVICES } from "@/lib/laundry-defaults";
+import { DEFAULT_GARMENTS, DEFAULT_SERVICES, examplePrices } from "@/lib/laundry-defaults";
 
 export async function POST(request: Request) {
   const { email, password, businessName, countryCode, locale } = await request.json();
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     email,
     password_hash: passwordHash,
     business_name: businessName,
-    price_list: DEFAULT_PRICE_LIST,
+    price_list: examplePrices(countryCode),
   };
   let { error } = await supabase.from("washers").insert({
     ...baseRow,

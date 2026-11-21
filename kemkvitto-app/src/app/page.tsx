@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 import { DEFAULT_BRAND, brandTheme } from "@/lib/brand";
+import { formatLaundryMoney } from "@/lib/laundry-defaults";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -45,6 +46,7 @@ export default function NewReceiptPage() {
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
   const [businessName, setBusinessName] = useState("");
@@ -68,6 +70,7 @@ export default function NewReceiptPage() {
           if (data.garmentList) setGarmentList(data.garmentList);
           if (data.serviceList) setServiceList(data.serviceList);
           if (data.businessName) setBusinessName(data.businessName);
+          setCountryCode(data.countryCode ?? null);
           setSettingsLoaded(true);
         });
     }
@@ -275,6 +278,7 @@ export default function NewReceiptPage() {
                 brandColor={brandColor}
                 garmentList={garmentList}
                 showPrices={showPrices}
+                countryCode={countryCode}
               />
             </div>
 
@@ -308,7 +312,7 @@ export default function NewReceiptPage() {
                     {active && <span className="pos-service-check">✓</span>}
                     <span>{t(`service.${svc.key}` as Parameters<typeof t>[0])}</span>
                     {showPrices && price > 0 && (
-                      <span className="pos-service-price">{price} kr</span>
+                      <span className="pos-service-price">{formatLaundryMoney(price, countryCode)}</span>
                     )}
                   </button>
                 );
@@ -499,6 +503,7 @@ export default function NewReceiptPage() {
                 onQtyChange={handleQtyChange}
                 serviceLines={serviceLines}
                 showPrices={showPrices}
+                countryCode={countryCode}
               />
             </div>
 
@@ -533,6 +538,7 @@ export default function NewReceiptPage() {
           disabled={submitting || garmentCount === 0 || !deliveryDate}
           customerName={customerName}
           customerEmail={customerEmail}
+          countryCode={countryCode}
           onSubmit={handleSubmit}
           showPrices={showPrices}
         />

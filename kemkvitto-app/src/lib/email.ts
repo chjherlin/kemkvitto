@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
 import { DEFAULT_BRAND, brandTheme } from "./brand";
+import { formatLaundryMoney } from "./laundry-defaults";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -28,6 +29,7 @@ interface WasherInfo {
   business_name: string;
   brand_color: string;
   price_list: Record<string, number>;
+  country_code?: string | null;
 }
 
 function parseGarmentLines(
@@ -57,6 +59,7 @@ function buildReceiptHTML(
   const brandColor = theme.brand;
   const receiptLabel = formatReceiptNumber(receipt.receipt_number);
   const vatAmount = Math.round(total * 0.25 / 1.25);
+  const money = (amount: number) => formatLaundryMoney(amount, washer.country_code);
 
   const lineRows = lines
     .map((l) => {
@@ -70,8 +73,8 @@ function buildReceiptHTML(
       return `<tr>
         <td style="padding:4px 0;color:#1c1917;font-size:14px;">${l.name}</td>
         <td style="padding:4px 0;text-align:center;color:#78716c;font-size:14px;">${l.qty}</td>
-        <td style="padding:4px 0;text-align:right;color:#78716c;font-size:14px;">${l.unitPrice} kr</td>
-        <td style="padding:4px 0;text-align:right;color:#1c1917;font-size:14px;font-weight:600;">${lineTotal} kr</td>
+        <td style="padding:4px 0;text-align:right;color:#78716c;font-size:14px;">${money(l.unitPrice)}</td>
+        <td style="padding:4px 0;text-align:right;color:#1c1917;font-size:14px;font-weight:600;">${money(lineTotal)}</td>
       </tr>`;
     })
     .join("");
@@ -144,10 +147,10 @@ function buildReceiptHTML(
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td style="color:#1c1917;font-size:16px;font-weight:700;">TOTALT</td>
-              <td style="text-align:right;color:${brandColor};font-size:20px;font-weight:700;font-family:'Courier New',monospace;">${total} kr</td>
+              <td style="text-align:right;color:${brandColor};font-size:20px;font-weight:700;font-family:'Courier New',monospace;">${money(total)}</td>
             </tr>
             <tr>
-              <td colspan="2" style="color:#a8a29e;font-size:11px;padding-top:4px;">varav moms (25%): ${vatAmount} kr</td>
+              <td colspan="2" style="color:#a8a29e;font-size:11px;padding-top:4px;">varav moms (25%): ${money(vatAmount)}</td>
             </tr>
           </table>
         </td></tr>` : ""}
@@ -190,6 +193,7 @@ export async function sendReceiptEmail(
     business_name: businessName,
     brand_color: brandColor,
     price_list: priceList,
+    country_code: washer?.country_code,
   }, lines, total, showPrices);
 
   if (resend) {
@@ -209,7 +213,7 @@ export async function sendReceiptEmail(
     console.log(`To: ${receipt.customer_email}`);
     console.log(`Subject: Kvitto #${receipt.receipt_number} — ${businessName}`);
     console.log(`Garments: ${lines.map((l) => `${l.name} x${l.qty}`).join(", ")}`);
-    console.log(`Total: ${total} kr`);
+    console.log(`Total: ${formatLaundryMoney(total, washer?.country_code)}`);
     console.log("=====================================");
   }
 }
@@ -230,7 +234,7 @@ export async function sendReminderEmail(
 
   const fullHtml = buildReceiptHTML(
     receipt,
-    { business_name: businessName, brand_color: brandColor, price_list: priceList },
+    { business_name: businessName, brand_color: brandColor, price_list: priceList, country_code: washer?.country_code },
     lines,
     total,
     showPrices
@@ -284,7 +288,7 @@ export async function sendDateUpdateEmail(
   const updatedReceipt = { ...receipt, delivery_date: newDate };
   const fullHtml = buildReceiptHTML(
     updatedReceipt,
-    { business_name: businessName, brand_color: brandColor, price_list: priceList },
+    { business_name: businessName, brand_color: brandColor, price_list: priceList, country_code: washer?.country_code },
     lines,
     total,
     showPrices
