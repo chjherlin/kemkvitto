@@ -54,7 +54,7 @@ function calculateTotal(lines: MailLine[]): number {
 
 export function mailLogoUrl(): string {
   const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
-  const path = "/kemkvitto-logo-white.png";
+  const path = "/kemkvitto-logo-dark.png";
   return base ? `${base}${path}` : path;
 }
 
@@ -69,7 +69,6 @@ function mailTheme(brandColor: string): RenderMailInput["theme"] {
     muted: brandTheme(grey).bar,
     footer: tint(grey),
     card: INK_LIGHT,
-    plate: INK_DARK,
   };
 }
 

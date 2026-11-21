@@ -11,7 +11,6 @@ export interface MailTheme {
   muted: string;
   footer: string;
   card: string;
-  plate: string;
 }
 
 export interface MailLine {
@@ -335,16 +334,12 @@ export function renderMailHtml(input: RenderMailInput): string {
         </td></tr>
         ${totalRow}
         ${comment}
-        <tr><td style="padding:24px 0 0;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${theme.footer};">
+        <tr><td align="center" style="padding:22px 28px 26px;background:${theme.card};">
+          <table role="presentation" cellpadding="0" cellspacing="0" align="center">
             <tr>
-              <td style="padding:18px 28px;color:${theme.muted};font-size:16px;">${escapeHtml(copy.footer)}</td>
-              <td style="padding:18px 28px;text-align:right;">
-                <table role="presentation" cellpadding="0" cellspacing="0" align="right" style="background:${theme.plate};border-radius:8px;">
-                  <tr><td style="padding:6px 10px;">
-                    <img src="${escapeHtml(input.logoSrc)}" alt="kemkvitto" height="22" style="display:block;height:22px;width:auto;border:0;">
-                  </td></tr>
-                </table>
+              <td style="color:${theme.muted};font-size:16px;line-height:22px;vertical-align:middle;padding-right:8px;">${escapeHtml(copy.footer)}</td>
+              <td style="vertical-align:middle;">
+                <img src="${escapeHtml(input.logoSrc)}" alt="kemkvitto" height="22" style="display:block;height:22px;width:auto;border:0;">
               </td>
             </tr>
           </table>

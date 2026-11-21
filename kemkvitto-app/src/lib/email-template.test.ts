@@ -33,9 +33,8 @@ function sample(kind: RenderMailInput["kind"], extra: Partial<RenderMailInput> =
       muted: "#797470",
       footer: "rgb(200,200,200)",
       card: "#ffffff",
-      plate: "#1c1917",
     },
-    logoSrc: "kemkvitto-logo-white.png",
+    logoSrc: "kemkvitto-logo-dark.png",
     ...extra,
   };
 }
@@ -57,6 +56,8 @@ test("the header uses the brand colour, not the darker bar", () => {
   assert.match(html, /Borde vara klar/);
   assert.match(html, /font-size:28px/);
   assert.match(html, /#0042/);
+  assert.match(html, /kemkvitto-logo-dark\.png/);
+  assert.equal(html.includes("border-radius:8px"), false);
 });
 
 test("ready today and the hand reminder use different messages", () => {
@@ -93,8 +94,8 @@ test("writes the four review mails", () => {
   const dir = process.env.EMAIL_PREVIEW_DIR
     || join(dirname(fileURLToPath(import.meta.url)), "../../tmp/emails");
   mkdirSync(dir, { recursive: true });
-  const logo = join(dirname(fileURLToPath(import.meta.url)), "../../public/kemkvitto-logo-white.png");
-  copyFileSync(logo, join(dir, "kemkvitto-logo-white.png"));
+  const logo = join(dirname(fileURLToPath(import.meta.url)), "../../public/kemkvitto-logo-dark.png");
+  copyFileSync(logo, join(dir, "kemkvitto-logo-dark.png"));
   const preview = { customerName: "Anna Andersson" };
   const files: Array<[string, RenderMailInput]> = [
     ["receipt.html", sample("receipt", preview)],
