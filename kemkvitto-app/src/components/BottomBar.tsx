@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import { onBrand } from "@/lib/brand";
+import { formatLaundryMoney } from "@/lib/laundry-defaults";
 
 interface BottomBarProps {
   garmentCount: number;
@@ -13,6 +14,7 @@ interface BottomBarProps {
   customerEmail?: string;
   onSubmit: () => void;
   showPrices?: boolean;
+  countryCode?: string | null;
 }
 
 export default function BottomBar({
@@ -25,6 +27,7 @@ export default function BottomBar({
   customerEmail,
   onSubmit,
   showPrices = true,
+  countryCode = null,
 }: BottomBarProps) {
   const { t } = useI18n();
 
@@ -52,7 +55,7 @@ export default function BottomBar({
               {t("order.total")}
             </span>
             <span className="font-receipt text-2xl font-bold" style={{ color: brandColor }}>
-              {total > 0 ? `${total} kr` : "—"}
+              {total > 0 ? formatLaundryMoney(total, countryCode) : "—"}
             </span>
           </div>
         )}

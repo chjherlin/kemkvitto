@@ -8,6 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
+import { currencySymbol } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 
 function ItemListEditor({
@@ -18,6 +19,7 @@ function ItemListEditor({
   addLabel,
   priceList,
   showPrices,
+  countryCode = null,
   onRename,
   onRemove,
   onAdd,
@@ -30,6 +32,7 @@ function ItemListEditor({
   addLabel: string;
   priceList: Record<string, number>;
   showPrices: boolean;
+  countryCode?: string | null;
   onRename: (idx: number, newName: string) => void;
   onRemove: (idx: number) => void;
   onAdd: () => void;
@@ -67,11 +70,12 @@ function ItemListEditor({
                   value={item ? (priceList[item] || "") : ""}
                   onChange={(e) => onPriceChange(item, e.target.value)}
                   disabled={!item}
+                  step="any"
                   className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
                   style={{ borderColor: "var(--border)" }}
-                  aria-label={`${item} kr`}
+                  aria-label={item}
                 />
-                <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+                <span className="text-xs" style={{ color: "var(--text-light)" }}>{currencySymbol(countryCode)}</span>
               </>
             )}
             <button
@@ -113,6 +117,7 @@ export default function SettingsPage() {
   const [resetDone, setResetDone] = useState(false);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -129,6 +134,7 @@ export default function SettingsPage() {
         setGarmentList(data.garmentList || []);
         setServiceList(data.serviceList || []);
         setResetNumber(formatReceiptNumber(data.nextReceiptNumber ?? 1));
+        setCountryCode(data.countryCode ?? null);
         setLoading(false);
       });
   }, [status]);
@@ -163,7 +169,7 @@ export default function SettingsPage() {
   }
 
   function setPrice(garment: string, value: string) {
-    const num = parseInt(value);
+    const num = parseFloat(value);
     const next = { ...priceList };
     if (!num || num <= 0) {
       delete next[garment];
@@ -418,6 +424,7 @@ export default function SettingsPage() {
           addLabel={t("settings.addGarment")}
           priceList={priceList}
           showPrices={usePrices}
+          countryCode={countryCode}
           onRename={(idx, name) => renameItem(garmentList, setGarmentList, idx, name)}
           onRemove={(idx) => removeItem(garmentList, setGarmentList, idx)}
           onAdd={() => addItem(garmentList, setGarmentList)}
@@ -431,6 +438,7 @@ export default function SettingsPage() {
           addLabel={t("settings.addService")}
           priceList={priceList}
           showPrices={usePrices}
+          countryCode={countryCode}
           onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
           onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
           onAdd={() => addItem(serviceList, setServiceList)}

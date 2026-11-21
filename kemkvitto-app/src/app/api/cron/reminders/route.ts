@@ -31,14 +31,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "No reminders to send", count: 0, date: tomorrowISO });
   }
 
-  const washerCache: Record<string, { business_name: string; brand_color: string; price_list: Record<string, number> }> = {};
+  const washerCache: Record<string, { business_name: string; brand_color: string; price_list: Record<string, number>; country_code?: string | null }> = {};
 
   let sent = 0;
   for (const receipt of receipts) {
     if (!washerCache[receipt.washer_id]) {
       const { data: washer } = await supabase
         .from("washers")
-        .select("business_name, brand_color, price_list")
+        .select("business_name, brand_color, price_list, country_code")
         .eq("id", receipt.washer_id)
         .single();
       if (washer) washerCache[receipt.washer_id] = washer;

@@ -33,7 +33,7 @@ export async function POST(
   // Fetch washer info for branding and pricing
   const { data: washer } = await supabase
     .from("washers")
-    .select("business_name, brand_color, price_list")
+    .select("business_name, brand_color, price_list, country_code")
     .eq("id", receipt.washer_id)
     .single();
 
