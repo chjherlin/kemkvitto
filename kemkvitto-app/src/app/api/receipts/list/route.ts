@@ -7,9 +7,16 @@ import { createServiceClient } from "@/lib/supabase";
 const FULL_SELECT =
   "id, receipt_number, tag_number, garments, delivery_date, drop_off_date, customer_email, customer_name, customer_phone, comment, created_at, amount_total, services";
 
+// Same columns plus the manual reminder time (migration 008, not applied everywhere)
+const WITH_REMINDER = `${FULL_SELECT}, reminder_sent_at`;
+
 // Base select with only migration 001 columns
 const BASE_SELECT =
   "id, receipt_number, garments, delivery_date, customer_email, comment, created_at";
+
+function missingColumn(code: string | undefined): boolean {
+  return code === "42703" || code === "PGRST204";
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -22,12 +29,24 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("receipts")
-    .select(FULL_SELECT)
+    .select(WITH_REMINDER)
     .eq("washer_id", washerId)
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (error?.code === "42703" || error?.code === "PGRST204") {
+  if (missingColumn(error?.code)) {
+    const again = await supabase
+      .from("receipts")
+      .select(FULL_SELECT)
+      .eq("washer_id", washerId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data = again.data as any;
+    error = again.error;
+  }
+
+  if (missingColumn(error?.code)) {
     const fallback = await supabase
       .from("receipts")
       .select(BASE_SELECT)
