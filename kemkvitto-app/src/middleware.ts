@@ -1,6 +1,12 @@
 import { encode, getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { loadWasherBilling } from "@/lib/billing";
+import {
+  SESSION_MAX_AGE_SECONDS,
+  sessionCookieName,
+  sessionCookieOptions,
+  sessionUsesSecureCookie,
+} from "@/lib/session-cookie";
 import { subscriptionAllowsAccess, tokenGrantsAccess } from "@/lib/subscription-rules";
 
 const PUBLIC_PATHS = ["/login", "/register", "/privacy", "/terms", "/api/auth"];
@@ -69,8 +75,12 @@ async function withRefreshedSession(
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) return response;
 
-  const secure = request.nextUrl.protocol === "https:";
-  const name = secure ? "__Secure-next-auth.session-token" : "next-auth.session-token";
+  const secure = sessionUsesSecureCookie({
+    nextAuthUrl: process.env.NEXTAUTH_URL,
+    vercel: process.env.VERCEL,
+    protocol: request.nextUrl.protocol,
+  });
+  const name = sessionCookieName(secure);
   try {
     const claims = { ...token };
     delete claims.exp;
@@ -85,13 +95,9 @@ async function withRefreshedSession(
         subscriptionCheckedAt: Date.now(),
       },
       secret,
+      maxAge: SESSION_MAX_AGE_SECONDS,
     });
-    response.cookies.set(name, value, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      secure,
-    });
+    response.cookies.set(name, value, sessionCookieOptions(secure));
   } catch {
     // Access is already allowed. The next request can read the database again.
   }
