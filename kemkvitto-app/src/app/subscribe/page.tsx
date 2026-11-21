@@ -8,7 +8,7 @@ import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
-import { formatEur, pricingConfig } from "@/lib/pricing";
+import { formatEur, monthlyPriceEur, pricingConfig, yearlyPriceEur } from "@/lib/pricing";
 import { INK_DARK, INK_LIGHT, brandTheme } from "@/lib/brand";
 
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
@@ -124,9 +124,12 @@ export default function SubscribePage() {
   }
 
   const theme = brandTheme(brandHex || undefined);
-  const price = interval === "year" ? info.yearlyEur : info.monthlyEur;
-  const countryName = info.countries?.find((c) => c.code === info.countryCode)?.name?.[locale]
-    || info.countries?.find((c) => c.code === info.countryCode)?.name?.en;
+  const pricedCountry = countryCode || info.countryCode || "";
+  const price = pricedCountry
+    ? (interval === "year" ? yearlyPriceEur(pricedCountry) : monthlyPriceEur(pricedCountry))
+    : null;
+  const countryName = info.countries?.find((c) => c.code === pricedCountry)?.name?.[locale]
+    || info.countries?.find((c) => c.code === pricedCountry)?.name?.en;
   const savePercent = Math.round(pricingConfig.yearlyDiscount * 100);
   const perks = [t("subscribe.perkEmail"), t("subscribe.perkReady"), t("subscribe.perkCancel")];
   const displayName = businessName || session?.user?.name || "";
@@ -170,7 +173,14 @@ export default function SubscribePage() {
               {t("auth.country")}
               <select
                 value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setCountryCode(next);
+                  try {
+                    if (next) localStorage.setItem("kemkvitto-country", next);
+                    else localStorage.removeItem("kemkvitto-country");
+                  } catch { /* ignore */ }
+                }}
                 className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
                 style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
               >
@@ -216,12 +226,14 @@ export default function SubscribePage() {
             </>
           )}
 
-          {info.countryCode && (
+          {pricedCountry && (
             <div className="mt-4 rounded-xl px-4 py-4" style={{ background: theme.tint }}>
               <div className="text-sm" style={{ color: "#44403c" }}>{countryName}</div>
-              <div className="mt-1 text-3xl" style={{ fontFamily: mono.style.fontFamily, fontWeight: 700 }}>
-                {price != null ? formatEur(price) : "—"}
-              </div>
+              {price != null && (
+                <div className="mt-1 text-3xl" style={{ fontFamily: mono.style.fontFamily, fontWeight: 700 }}>
+                  {formatEur(price)}
+                </div>
+              )}
               <p className="mt-2 text-base font-bold">
                 {interval === "year"
                   ? `${t("subscribe.savePrefix")} ${savePercent} ${t("subscribe.saveSuffix")}`
