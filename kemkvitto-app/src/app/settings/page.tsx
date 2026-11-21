@@ -8,7 +8,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
-import { currencySymbol } from "@/lib/laundry-defaults";
+import { currencyAffix } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 
 function ItemListEditor({
@@ -38,6 +38,7 @@ function ItemListEditor({
   onAdd: () => void;
   onPriceChange: (item: string, value: string) => void;
 }) {
+  const money = currencyAffix(countryCode);
   return (
     <section>
       <h2
@@ -63,6 +64,9 @@ function ItemListEditor({
             />
             {showPrices && (
               <>
+                {money.position === "before" && (
+                  <span className="font-receipt text-base font-bold" style={{ color: "var(--text-light)" }}>{money.symbol}</span>
+                )}
                 <input
                   type="number"
                   min={0}
@@ -71,11 +75,13 @@ function ItemListEditor({
                   onChange={(e) => onPriceChange(item, e.target.value)}
                   disabled={!item}
                   step="any"
-                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
+                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right font-receipt text-base font-bold"
                   style={{ borderColor: "var(--border)" }}
                   aria-label={item}
                 />
-                <span className="text-xs" style={{ color: "var(--text-light)" }}>{currencySymbol(countryCode)}</span>
+                {money.position === "after" && (
+                  <span className="font-receipt text-base font-bold" style={{ color: "var(--text-light)" }}>{money.symbol}</span>
+                )}
               </>
             )}
             <button

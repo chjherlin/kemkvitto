@@ -293,7 +293,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
         {/* Total */}
         {showPrices && grandTotal > 0 && (
           <div style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Totalt: <span style={{ fontWeight: 700, color: brandColor }}>{formatLaundryMoney(grandTotal, countryCode)}</span>
+            Totalt: <span className="font-receipt" style={{ fontWeight: 700, fontSize: "1rem", color: brandColor }}>{formatLaundryMoney(grandTotal, countryCode)}</span>
           </div>
         )}
 
