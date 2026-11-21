@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
@@ -11,10 +11,14 @@ import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
+import { cloneSettings, settingsAreDirty, type SettingsSnapshot } from "@/lib/settings-dirty";
 
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
 const jost = Jost({ subsets: ["latin"], weight: ["700"] });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["700"] });
+const QUIET_GREY = brandTheme(PALETTE.find((color) => color.id === "grey")!.hex).bar;
+
+type LeaveAction = { kind: "href"; href: string } | { kind: "signout" };
 
 function ItemListEditor({
   title,
@@ -120,6 +124,10 @@ export default function SettingsPage() {
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState<SettingsSnapshot | null>(null);
+  const [pendingLeave, setPendingLeave] = useState<LeaveAction | null>(null);
+  const dirtyRef = useRef(false);
+  const allowLeave = useRef(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -135,7 +143,16 @@ export default function SettingsPage() {
         setBusinessName(data.businessName || "");
         setGarmentList(data.garmentList || []);
         setServiceList(data.serviceList || []);
-        setResetNumber(formatReceiptNumber(data.nextReceiptNumber ?? 1));
+        const loadedNumber = formatReceiptNumber(data.nextReceiptNumber ?? 1);
+        setResetNumber(loadedNumber);
+        setBaseline(cloneSettings({
+          brandColor: data.brandColor || DEFAULT_BRAND,
+          businessName: data.businessName || "",
+          priceList: data.priceList || {},
+          garmentList: data.garmentList || [],
+          serviceList: data.serviceList || [],
+          receiptNumber: loadedNumber,
+        }));
         setLoading(false);
       });
     fetch("/api/subscription/status")
@@ -144,7 +161,7 @@ export default function SettingsPage() {
       .catch(() => setSubscriptionStatus(null));
   }, [status]);
 
-  async function handleSave() {
+  async function persistChanges(): Promise<boolean> {
     setSaving(true);
     setSaveError("");
     const res = await fetch("/api/settings", {
@@ -152,14 +169,117 @@ export default function SettingsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brandColor, priceList, businessName, garmentList, serviceList }),
     });
-    setSaving(false);
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } else {
+    if (!res.ok) {
+      setSaving(false);
       const body = await res.json().catch(() => ({}));
       setSaveError(body.error || "Kunde inte spara. Försök igen.");
+      return false;
     }
+    let nextNumber = resetNumber;
+    if (baseline && resetNumber !== baseline.receiptNumber) {
+      const next = parseReceiptCounter(resetNumber || "1");
+      const numberRes = await fetch("/api/receipts/reset-number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextReceiptNumber: next }),
+      });
+      if (!numberRes.ok) {
+        setSaving(false);
+        setSaveError("Kunde inte spara. Försök igen.");
+        setBaseline(cloneSettings({
+          brandColor,
+          businessName,
+          priceList,
+          garmentList,
+          serviceList,
+          receiptNumber: baseline.receiptNumber,
+        }));
+        return false;
+      }
+      nextNumber = formatReceiptNumber(next);
+      setResetNumber(nextNumber);
+    }
+    setBaseline(cloneSettings({
+      brandColor,
+      businessName,
+      priceList,
+      garmentList,
+      serviceList,
+      receiptNumber: nextNumber,
+    }));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    return true;
+  }
+
+  const snapshot: SettingsSnapshot = {
+    brandColor,
+    businessName,
+    priceList,
+    garmentList,
+    serviceList,
+    receiptNumber: resetNumber,
+  };
+  const dirty = baseline != null && settingsAreDirty(snapshot, baseline);
+  dirtyRef.current = dirty;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (allowLeave.current || !dirtyRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (allowLeave.current || !dirtyRef.current) return;
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as Element | null)?.closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || anchor.getAttribute("target") === "_blank") return;
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingLeave({ kind: "href", href: `${url.pathname}${url.search}${url.hash}` });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingLeave) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPendingLeave(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pendingLeave]);
+
+  function follow(action: LeaveAction) {
+    allowLeave.current = true;
+    dirtyRef.current = false;
+    if (action.kind === "signout") {
+      void signOut();
+      return;
+    }
+    router.push(action.href);
+  }
+
+  function askToLeave(action: LeaveAction) {
+    if (!dirtyRef.current) {
+      follow(action);
+      return;
+    }
+    setPendingLeave(action);
   }
 
   const usePrices = pricesEnabled(priceList);
@@ -245,7 +365,7 @@ export default function SettingsPage() {
           <nav className="flex flex-wrap items-center gap-3 text-base">
             <LanguageToggle color={theme.barInk} />
             <Link href="/receipts" style={{ color: theme.barInk }}>{t("nav.receipts")}</Link>
-            <button type="button" onClick={() => signOut()} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
+            <button type="button" onClick={() => askToLeave({ kind: "signout" })} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
           </nav>
         </div>
       </header>
@@ -258,7 +378,7 @@ export default function SettingsPage() {
           </div>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => { void persistChanges(); }}
             disabled={saving}
             className="rounded-xl px-4 text-base font-bold disabled:opacity-50"
             style={{ background: theme.brand, color: theme.onBrand, minHeight: "56px" }}
@@ -299,12 +419,15 @@ export default function SettingsPage() {
                 onClick={async () => {
                   if (!resetNumber) return;
                   const next = parseReceiptCounter(resetNumber);
-                  await fetch("/api/receipts/reset-number", {
+                  const numberRes = await fetch("/api/receipts/reset-number", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ nextReceiptNumber: next }),
                   });
-                  setResetNumber(formatReceiptNumber(next));
+                  if (!numberRes.ok) return;
+                  const formatted = formatReceiptNumber(next);
+                  setResetNumber(formatted);
+                  setBaseline((prev) => prev ? cloneSettings({ ...prev, receiptNumber: formatted }) : prev);
                   setResetDone(true);
                   setTimeout(() => setResetDone(false), 2000);
                 }}
@@ -426,6 +549,62 @@ export default function SettingsPage() {
           <Link href="/terms" className="text-base underline" style={{ color: "#44403c" }}>Terms of Service</Link>
         </div>
       </main>
+      {pendingLeave && (
+        <div
+          role="presentation"
+          onClick={() => setPendingLeave(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 40, background: `${INK_DARK}73`, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-title"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full rounded-2xl p-5"
+            style={{ maxWidth: "410px", background: INK_LIGHT, color: INK_DARK }}
+          >
+            <h2 id="unsaved-title" className="text-2xl font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("settings.unsavedTitle")}</h2>
+            <div className="mt-5 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  void persistChanges().then((ok) => {
+                    if (!ok || !pendingLeave) return;
+                    const action = pendingLeave;
+                    setPendingLeave(null);
+                    follow(action);
+                  });
+                }}
+                className="rounded-xl text-base font-bold disabled:opacity-50"
+                style={{ background: theme.brand, color: theme.onBrand, minHeight: "56px" }}
+              >
+                {saving ? t("settings.saving") : t("settings.save")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingLeave;
+                  setPendingLeave(null);
+                  follow(action);
+                }}
+                className="rounded-xl bg-white text-base"
+                style={{ border: `2px solid ${INK_DARK}`, color: INK_DARK, minHeight: "56px" }}
+              >
+                {t("settings.leaveWithoutSaving")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingLeave(null)}
+                className="rounded-xl bg-white text-base font-semibold"
+                style={{ border: `2px solid ${QUIET_GREY}`, color: INK_DARK, minHeight: "56px" }}
+              >
+                {t("settings.stay")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
