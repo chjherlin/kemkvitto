@@ -30,6 +30,12 @@ test("standard strength keeps the palette hex", () => {
   }
 });
 
+test("strong blue is the landing default", () => {
+  const blue = PALETTE.find((color) => color.id === "blue");
+  assert.ok(blue);
+  assert.equal(applyStrength(blue.hex, "strong"), "#319ae8");
+});
+
 test("a strength-shifted yellow still uses the yellow bar", () => {
   const shifted = applyStrength("#ECE080", "strong");
   const theme = brandTheme(shifted);
