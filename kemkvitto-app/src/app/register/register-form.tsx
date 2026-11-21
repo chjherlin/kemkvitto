@@ -6,9 +6,22 @@ import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
-import { CHOSEN_COUNTRY_KEY, countries, formatEur, monthlyPriceEur } from "@/lib/pricing";
-import { brandTheme } from "@/lib/brand";
-import { readBrandChoice } from "@/lib/brand-choice";
+import { CHOSEN_COUNTRY_KEY, countries, formatEur, monthlyPriceEur, pricingConfig } from "@/lib/pricing";
+import { PALETTE, brandTheme, type Strength } from "@/lib/brand";
+import { defaultLandingBrand, readBrandChoice } from "@/lib/brand-choice";
+
+const COLOUR_KEY = {
+  green: "color.green",
+  blue: "color.blue",
+  orange: "color.orange",
+  teal: "color.teal",
+  brown: "color.brown",
+  yellow: "color.yellow",
+  purple: "color.purple",
+  pink: "color.pink",
+  red: "color.red",
+  grey: "color.grey",
+} as const;
 
 export default function RegisterForm({ detectedCountry = null }: { detectedCountry?: string | null }) {
   const router = useRouter();
@@ -19,7 +32,7 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
   const [countryCode, setCountryCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [brandHex, setBrandHex] = useState("");
+  const [brandHex, setBrandHex] = useState(defaultLandingBrand);
 
   useEffect(() => {
     setBrandHex(readBrandChoice());
@@ -29,6 +42,19 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
     } catch { /* ignore */ }
   }, []);
 
+  const theme = brandTheme(brandHex);
+  const baseId = (PALETTE.find((color) => color.hex.toLowerCase() === theme.base.toLowerCase())?.id ?? "blue") as keyof typeof COLOUR_KEY;
+  const strength: Strength = theme.strength ?? "strong";
+  const strengthLabel = strength === "damped"
+    ? t("settings.strengthDamped")
+    : strength === "strong"
+      ? t("settings.strengthStrong")
+      : t("settings.strengthStandard");
+  const activeCountry = countryCode || detectedCountry || "";
+  const monthly = activeCountry ? monthlyPriceEur(activeCountry) : null;
+  const countryName = countries.find((country) => country.code === activeCountry)?.name[locale]
+    || countries.find((country) => country.code === activeCountry)?.name.en;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -37,7 +63,14 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, businessName, countryCode, locale }),
+      body: JSON.stringify({
+        email,
+        password,
+        businessName,
+        countryCode,
+        locale,
+        brandColor: theme.brand,
+      }),
     });
 
     if (!res.ok) {
@@ -55,47 +88,75 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
     router.push("/login?registered=1");
   }
 
-  const theme = brandTheme(brandHex || undefined);
-  const logoOnLight = theme.barInk.toLowerCase() === "#ffffff" ? theme.bar : theme.barInk;
-
   return (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: theme.tint }}>
-      <div className="absolute right-4 top-4">
-        <LanguageToggle />
-      </div>
-      <div className="animate-fade-up w-full max-w-sm space-y-8">
-        <div className="flex flex-col items-center gap-4">
-          <KemkvittoLogo size="lg" color={logoOnLight} />
-          <p style={{ color: "var(--text-muted)" }}>
-            {t("auth.registerSubtitle")}
-          </p>
+    <div style={{ background: theme.tint, color: "#1c1917", minHeight: "100vh" }}>
+      <header style={{ background: theme.bar, color: theme.barInk }}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+          <Link href="/login" aria-label="Kemkvitto">
+            <KemkvittoLogo color={theme.barInk} size="sm" />
+          </Link>
+          <div className="flex items-center gap-3">
+            <LanguageToggle color={theme.barInk} />
+            <Link href="/login" className="text-base font-semibold" style={{ color: theme.barInk, minHeight: "56px", display: "inline-flex", alignItems: "center" }}>
+              {t("auth.login")}
+            </Link>
+          </div>
         </div>
+      </header>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <main className="flex justify-center px-4 py-10">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full rounded-3xl bg-white p-6"
+          style={{ maxWidth: "410px", border: "1px solid #e7e5e4" }}
+        >
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-jost), sans-serif" }}>{t("auth.registerSubtitle")}</h1>
+          <p className="mt-2 text-base" style={{ color: "#44403c" }}>
+            {pricingConfig.trialDays} {t("landing.trialDays")} {t("auth.registerLead")}
+          </p>
+
           {error && (
-            <p className="rounded-xl bg-red-50 p-4 text-center text-sm font-medium text-red-600">
-              {error}
-            </p>
+            <p role="alert" className="mt-4 rounded-xl p-4 text-base" style={{ background: "#fef2f2", color: "#7f1d1d" }}>{error}</p>
           )}
-          <input
-            type="text"
-            placeholder={t("auth.businessName")}
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            required
-            className="touch-target w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium focus:outline-none"
-            style={{ borderColor: "var(--border)" }}
-          />
-          <input
-            type="email"
-            placeholder={t("auth.email")}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="touch-target w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium focus:outline-none"
-            style={{ borderColor: "var(--border)" }}
-          />
-          <label className="block text-sm font-medium" style={{ color: "#1c1917" }}>
+
+          <label className="mt-5 block text-base font-medium">
+            {t("auth.businessName")}
+            <input
+              type="text"
+              placeholder={t("landing.exampleBusiness")}
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              required
+              className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
+              style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
+            />
+          </label>
+          <label className="mt-4 block text-base font-medium">
+            {t("auth.email")}
+            <input
+              type="email"
+              placeholder={t("landing.emailPlaceholder")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
+              style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
+            />
+          </label>
+          <label className="mt-4 block text-base font-medium">
+            {t("auth.password")}
+            <input
+              type="password"
+              placeholder={t("auth.passwordMinLength")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
+              style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
+            />
+          </label>
+          <label className="mt-4 block text-base font-medium">
             {t("auth.country")}
             <select
               value={countryCode}
@@ -108,8 +169,8 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
                 } catch { /* ignore */ }
               }}
               required
-              className="touch-target mt-1 w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium"
-              style={{ borderColor: "var(--border)", color: "#1c1917" }}
+              className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
+              style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
             >
               <option value="">{t("auth.countryPlaceholder")}</option>
               {countries.map((country) => (
@@ -119,43 +180,43 @@ export default function RegisterForm({ detectedCountry = null }: { detectedCount
               ))}
             </select>
           </label>
-          {(() => {
-            const code = countryCode || detectedCountry;
-            const monthly = code ? monthlyPriceEur(code) : null;
-            if (monthly == null) return null;
-            return (
-              <p className="text-center text-base" style={{ color: "#1c1917" }}>
-                {formatEur(monthly)} / {t("subscribe.monthly").toLowerCase()}
-              </p>
-            );
-          })()}
-          <input
-            type="password"
-            placeholder={t("auth.passwordMinLength")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="touch-target w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium focus:outline-none"
-            style={{ borderColor: "var(--border)" }}
-          />
+
+          {countryName && monthly != null && (
+            <div className="mt-4 flex items-center justify-between rounded-xl px-4" style={{ background: theme.tint, minHeight: "56px" }}>
+              <span className="text-base font-semibold">{countryName}</span>
+              <span className="font-receipt text-base">{formatEur(monthly)} / {t("subscribe.monthly").toLowerCase()}</span>
+            </div>
+          )}
+
+          <div className="mt-4 rounded-xl px-4 py-3" style={{ border: "1px solid #e7e5e4" }}>
+            <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="inline-block h-8 w-8 rounded-lg" style={{ background: theme.brand }} />
+              <span className="text-base">
+                {t("auth.yourColour")}: <strong>{t(COLOUR_KEY[baseId])}, {strengthLabel}</strong>
+              </span>
+            </div>
+            <p className="mt-2 text-base">
+              <Link href="/login#farg" className="font-semibold" style={{ color: "#1c1917", textDecoration: "underline" }}>{t("auth.changeColour")}</Link>
+              {" "}
+              <span style={{ color: "#44403c" }}>{t("auth.colourLater")}</span>
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="touch-target w-full rounded-xl px-4 py-4 text-lg font-bold shadow-lg disabled:opacity-50"
-            style={{ backgroundColor: theme.brand, color: theme.onBrand, boxShadow: `0 4px 20px ${theme.brand}40` }}
+            className="mt-5 w-full rounded-xl text-base font-bold disabled:opacity-50"
+            style={{ background: theme.brand, color: theme.onBrand, minHeight: "60px" }}
           >
-            {loading ? t("auth.registering") : t("auth.register")}
+            {loading ? t("auth.registering") : t("landing.ctaButton")}
           </button>
-        </form>
 
-        <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
-          {t("auth.hasAccount")}{" "}
-          <Link href="/login" className="font-semibold" style={{ color: theme.brand }}>
-            {t("auth.login")}
-          </Link>
-        </p>
-      </div>
+          <p className="mt-4 text-center text-base">
+            {t("auth.alreadyAccount")}{" "}
+            <Link href="/login" className="font-semibold" style={{ color: "#1c1917", textDecoration: "underline" }}>{t("auth.login")}</Link>
+          </p>
+        </form>
+      </main>
     </div>
   );
 }

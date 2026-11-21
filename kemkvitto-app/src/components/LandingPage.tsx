@@ -183,7 +183,7 @@ export default function LandingPage({ detectedCountry }: { detectedCountry: stri
           </div>
         </section>
 
-        <section className="mt-16 rounded-3xl bg-white p-6 md:p-8" style={{ border: "1px solid #e7e5e4" }}>
+        <section id="farg" className="mt-16 rounded-3xl bg-white p-6 md:p-8" style={{ border: "1px solid #e7e5e4" }}>
           <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--font-jost), sans-serif" }}>{t("landing.pickerTitle")}</h2>
           <div className="mt-6 grid gap-8 lg:grid-cols-2">
             <div>
