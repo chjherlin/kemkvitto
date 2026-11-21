@@ -304,7 +304,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   border-radius: 0.75rem;
   cursor: pointer;
   background: var(--bg-card);
-  min-height: 0;
+  min-height: 56px;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -332,14 +332,18 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 }
 
 .pos-tile-name {
-  font-size: 0.8125rem;
+  /* Was 0.8125rem (13px). +15% is 14.95px, so the 16px floor applies. */
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
 }
 
 .pos-tile-price {
-  font-size: 0.625rem;
+  /* Was 0.625rem (10px). +15% is 11.5px, so the 16px floor applies. */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text-light);
   margin-top: 0.125rem;
 }
@@ -360,23 +364,27 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   border: 2px solid var(--border);
   border-radius: 0.625rem;
   cursor: pointer;
-  font-size: 0.75rem;
+  /* Was 0.75rem (12px). +15% is 13.8px, so the 16px floor applies. */
+  font-size: 1rem;
   font-weight: 600;
   background: var(--bg-card);
   white-space: nowrap;
+  min-height: 56px;
 }
 .pos-service-chip:active {
   transform: scale(0.97);
 }
 
 .pos-service-check {
-  font-size: 0.625rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
 .pos-service-price {
+  /* Was 0.625rem (10px). +15% is 11.5px, so the 16px floor applies. */
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.625rem;
+  font-size: 1rem;
+  font-weight: 700;
   opacity: 0.7;
 }
 
