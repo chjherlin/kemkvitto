@@ -206,6 +206,8 @@ const garmentNames: Record<string, Record<Locale, string>> = {
   "Klänning": { sv: "Klänning", en: "Dress", da: "Kjole", no: "Kjole" },
   "Blus": { sv: "Blus", en: "Blouse", da: "Bluse", no: "Bluse" },
   "Skjorta": { sv: "Skjorta", en: "Shirt", da: "Skjorte", no: "Skjorte" },
+  "5 Skjortor": { sv: "5 Skjortor", en: "5 shirts", da: "5 skjorter", no: "5 skjorter" },
+  "10 Skjortor": { sv: "10 Skjortor", en: "10 shirts", da: "10 skjorter", no: "10 skjorter" },
   "Mocka": { sv: "Mocka", en: "Suede", da: "Ruskind", no: "Semsket" },
   "Slips": { sv: "Slips", en: "Tie", da: "Slips", no: "Slips" },
   "Jumper": { sv: "Jumper", en: "Jumper", da: "Jumper", no: "Jumper" },

@@ -3,13 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { DEFAULT_BRAND } from "@/lib/brand";
-
-const DEFAULT_GARMENTS = [
-  "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka", "Kjol",
-  "Poplin", "Matta", "Klänning", "Blus", "Skjorta",
-  "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
-];
-const DEFAULT_SERVICES = ["Pressning", "Stärkning", "Vikning", "Express"];
+import { DEFAULT_SERVICES, visibleGarments } from "@/lib/laundry-defaults";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -42,7 +36,7 @@ export async function GET() {
     brandColor: d?.brand_color ?? DEFAULT_BRAND,
     priceList: d?.price_list ?? {},
     businessName: d?.business_name ?? "",
-    garmentList: ((d?.garment_list as string[] | null) ?? DEFAULT_GARMENTS).filter((g: string) => g !== "Skjorta ×5" && g !== "Skjorta ×10"),
+    garmentList: visibleGarments(d?.garment_list as string[] | null),
     serviceList: (d?.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
 }
