@@ -9,7 +9,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 import { defaultLandingBrand, readBrandChoice, writeBrandChoice } from "@/lib/brand-choice";
-import { formatEur, lowestMonthlyPriceEur, pricingConfig } from "@/lib/pricing";
+import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, pricingConfig } from "@/lib/pricing";
 
 const PREVIEW_TILES = [
   { name: "Kavaj", selected: false },
@@ -20,7 +20,7 @@ const PREVIEW_TILES = [
   { name: "Skjorta", selected: false },
 ];
 
-export default function LandingPage() {
+export default function LandingPage({ detectedCountry }: { detectedCountry: string | null }) {
   const router = useRouter();
   const { t, tGarment } = useI18n();
   const [email, setEmail] = useState("");
@@ -29,11 +29,17 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [justRegistered, setJustRegistered] = useState(false);
   const [brandHex, setBrandHex] = useState(defaultLandingBrand);
+  const [chosenCountry, setChosenCountry] = useState<string | null>(null);
   const theme = brandTheme(brandHex);
   const strength: Strength = theme.strength ?? "strong";
 
   useEffect(() => {
     setBrandHex(readBrandChoice());
+    try {
+      setChosenCountry(localStorage.getItem(CHOSEN_COUNTRY_KEY));
+    } catch {
+      setChosenCountry(null);
+    }
     const params = new URLSearchParams(window.location.search);
     if (params.get("registered") !== "1") return;
     setJustRegistered(true);
@@ -243,7 +249,7 @@ export default function LandingPage() {
 
       <section className="mt-10 px-4 py-12 text-center" style={{ background: theme.brand, color: theme.onBrand }}>
         <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--font-jost), sans-serif" }}>{t("landing.ctaTitle")} {pricingConfig.trialDays} {t("landing.trialDays")}</h2>
-        <p className="mt-3 text-lg font-receipt">{t("landing.priceFrom")} {formatEur(lowestMonthlyPriceEur())} {t("landing.perMonth")}</p>
+        <VisitorPrice chosenCountry={chosenCountry} detectedCountry={detectedCountry} perMonth={t("landing.perMonth")} />
         <Link
           href="/register"
           className="mt-6 inline-flex items-center justify-center rounded-xl px-8 text-base font-bold"
@@ -262,6 +268,22 @@ export default function LandingPage() {
       </footer>
     </div>
   );
+}
+
+function VisitorPrice({
+  chosenCountry,
+  detectedCountry,
+  perMonth,
+}: {
+  chosenCountry: string | null;
+  detectedCountry: string | null;
+  perMonth: string;
+}) {
+  const hasChoice = Boolean(chosenCountry);
+  const code = hasChoice ? chosenCountry : detectedCountry;
+  const monthly = code ? monthlyPriceEur(code) : null;
+  if (monthly == null) return null;
+  return <p className="mt-3 text-lg font-receipt">{formatEur(monthly)} {perMonth}</p>;
 }
 
 function Card({ title, lines, border }: { title: string; lines: string[]; border?: string }) {

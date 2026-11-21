@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   countries,
-  lowestMonthlyPriceEur,
   monthlyPriceEur,
   pricingConfig,
   roundHalfUp,
@@ -53,16 +52,9 @@ test("yearly charge is twelve months minus the discount", () => {
   assert.equal(yearlyPriceEur("IN"), 28.8);
 });
 
-test("the from-price is the lowest configured monthly price", () => {
-  const lowest = lowestMonthlyPriceEur();
-  for (const country of countries) {
-    const price = monthlyPriceEur(country.code);
-    assert.ok(price != null && price >= lowest);
-  }
-  assert.equal(lowest, Math.min(...countries.map((country) => monthlyPriceEur(country.code) as number)));
-});
-
 test("unknown countries are not sold", () => {
   assert.equal(monthlyPriceEur("AR"), null);
+  assert.equal(monthlyPriceEur(null), null);
+  assert.equal(monthlyPriceEur(""), null);
   assert.equal(yearlyPriceEur("XX"), null);
 });

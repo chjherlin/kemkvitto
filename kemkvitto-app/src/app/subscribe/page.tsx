@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
-import { formatEur } from "@/lib/pricing";
+import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, yearlyPriceEur } from "@/lib/pricing";
 import { brandTheme } from "@/lib/brand";
 
 interface StatusResponse {
@@ -111,9 +111,12 @@ export default function SubscribePage() {
   }
 
   const theme = brandTheme();
-  const price = interval === "year" ? info.yearlyEur : info.monthlyEur;
-  const countryName = info.countries?.find((c) => c.code === info.countryCode)?.name?.[locale]
-    || info.countries?.find((c) => c.code === info.countryCode)?.name?.en;
+  const pricedCountry = countryCode || info.countryCode || "";
+  const price = pricedCountry
+    ? (interval === "year" ? yearlyPriceEur(pricedCountry) : monthlyPriceEur(pricedCountry))
+    : null;
+  const countryName = info.countries?.find((c) => c.code === pricedCountry)?.name?.[locale]
+    || info.countries?.find((c) => c.code === pricedCountry)?.name?.en;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-10" style={{ color: "#1c1917" }}>
@@ -152,7 +155,14 @@ export default function SubscribePage() {
           {t("auth.country")}
           <select
             value={countryCode}
-            onChange={(e) => setCountryCode(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setCountryCode(next);
+              try {
+                if (next) localStorage.setItem(CHOSEN_COUNTRY_KEY, next);
+                else localStorage.removeItem(CHOSEN_COUNTRY_KEY);
+              } catch { /* ignore */ }
+            }}
             className="mt-1 w-full rounded-xl border-2 bg-white px-4 py-4 text-lg"
             style={{ borderColor: "var(--border)", minHeight: "48px", color: "#1c1917" }}
           >
@@ -166,9 +176,9 @@ export default function SubscribePage() {
         </label>
       )}
 
-      {info.countryCode && (
+      {price != null && (
         <p className="text-lg font-semibold">
-          {countryName}: {price != null ? formatEur(price) : "—"} / {interval === "year" ? t("subscribe.yearly") : t("subscribe.monthly")}
+          {countryName}: {formatEur(price)} / {interval === "year" ? t("subscribe.yearly") : t("subscribe.monthly")}
         </p>
       )}
 

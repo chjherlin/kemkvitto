@@ -83,16 +83,9 @@ export function isSoldCountry(code: string | null | undefined): boolean {
   return countryByCode(code) !== null;
 }
 
-/** Lowest monthly price among countries that are sold. Used when no country is chosen yet. */
-export function lowestMonthlyPriceEur(): number {
-  const prices = countries
-    .map((country) => monthlyPriceEur(country.code))
-    .filter((price): price is number => price != null);
-  if (prices.length === 0) return pricingConfig.floorEur;
-  return Math.min(...prices);
-}
+export const CHOSEN_COUNTRY_KEY = "kemkvitto-country";
 
-export function monthlyPriceEur(countryCode: string): number | null {
+export function monthlyPriceEur(countryCode: string | null | undefined): number | null {
   const country = countryByCode(countryCode);
   if (!country) return null;
   return monthlyPriceFromGdp(country.gdpPppThousands);
