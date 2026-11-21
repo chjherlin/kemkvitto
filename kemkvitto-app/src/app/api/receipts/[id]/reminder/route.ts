@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReminderEmail } from "@/lib/email";
+import { loadMailWasher } from "@/lib/mail-washer";
 import { isPromisedDatePast, utcTodayISO } from "@/lib/reminder-list";
 
 function missingColumn(code: string | undefined): boolean {
@@ -41,14 +42,10 @@ export async function POST(
     return NextResponse.json({ error: "No customer email" }, { status: 400 });
   }
 
-  const { data: washer } = await supabase
-    .from("washers")
-    .select("business_name, brand_color, price_list")
-    .eq("id", washerId)
-    .single();
+  const washer = await loadMailWasher(supabase, washerId);
 
   try {
-    await sendReminderEmail(receipt, washer ?? undefined);
+    await sendReminderEmail(receipt, washer);
   } catch (err) {
     console.error("Reminder email failed:", err);
     return NextResponse.json({ error: "Could not send reminder" }, { status: 502 });

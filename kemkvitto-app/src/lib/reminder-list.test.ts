@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  calendarDate,
   formatReminderDate,
   garmentSummary,
   isPromisedDatePast,
@@ -17,6 +18,11 @@ test("a promised date has passed only when it is before today", () => {
 
 test("today is a UTC date", () => {
   assert.equal(utcTodayISO(new Date("2026-11-20T23:30:00.000Z")), "2026-11-20");
+});
+
+test("Stockholm calendar date is the local day, not UTC", () => {
+  assert.equal(calendarDate(new Date("2026-11-20T23:30:00.000Z"), "Europe/Stockholm"), "2026-11-21");
+  assert.equal(calendarDate(new Date("2026-11-20T12:00:00.000Z"), "Europe/Stockholm"), "2026-11-20");
 });
 
 test("garment summary repeats a quantity only above one", () => {
