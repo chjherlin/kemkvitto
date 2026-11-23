@@ -37,6 +37,7 @@ export interface WasherInfo {
   brand_color: string;
   price_list: Record<string, number>;
   locale?: string | null;
+  country_code?: string | null;
 }
 
 function parseGarmentLines(
