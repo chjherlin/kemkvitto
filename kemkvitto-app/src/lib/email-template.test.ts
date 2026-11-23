@@ -3,7 +3,7 @@ import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { mailSubject, renderMailHtml, type RenderMailInput } from "./email-template.ts";
+import { MAIL_LOGO_URL, mailSubject, renderMailHtml, type RenderMailInput } from "./email-template.ts";
 import { brandTheme } from "./brand.ts";
 import { formatReceiptNumber } from "./receipt-number.ts";
 
@@ -39,6 +39,10 @@ function sample(kind: RenderMailInput["kind"], extra: Partial<RenderMailInput> =
   };
 }
 
+test("the logo is loaded from the public site", () => {
+  assert.equal(MAIL_LOGO_URL, "https://www.kemkvitto.se/kemkvitto-logo-dark.png");
+});
+
 test("subjects use the padded receipt number and the three Swedish lines", () => {
   assert.equal(mailSubject(sample("receipt")), "Kvitto #0042 — Ert tvätteri");
   assert.equal(mailSubject(sample("ready")), "Din kemtvätt borde vara klar idag — Ert tvätteri");
@@ -57,6 +61,10 @@ test("the header uses the brand colour, not the darker bar", () => {
   assert.match(html, /font-size:28px/);
   assert.match(html, /#0042/);
   assert.match(html, /kemkvitto-logo-dark\.png/);
+  assert.match(html, /name="color-scheme" content="light"/);
+  assert.match(html, /name="supported-color-schemes" content="light"/);
+  assert.match(html, /background:#ffffff/);
+  assert.match(html, /Inlämnat/);
   assert.equal(html.includes("border-radius:8px"), false);
 });
 
@@ -69,6 +77,12 @@ test("ready today and the hand reminder use different messages", () => {
   assert.match(reminder, /Påminnelse · Kvitto/);
   assert.match(reminder, /Din kemtvätt väntar på dig/);
   assert.match(reminder, /Tvätten borde vara klar och går att hämta när det passar dig/);
+});
+
+test("a missing drop-off date leaves out the dropped-off row", () => {
+  const html = renderMailHtml(sample("receipt", { dropOffDate: null }));
+  assert.equal(html.includes("Inlämnat"), false);
+  assert.match(html, /Borde vara klar/);
 });
 
 test("prices stay off the mail when the laundry has hidden them", () => {
