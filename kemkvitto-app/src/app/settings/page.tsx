@@ -372,7 +372,7 @@ export default function SettingsPage() {
             {businessName && <span className="text-base">/ {businessName}</span>}
           </div>
           <AppMenu
-            color={theme.barInk}
+            brand={theme.brand}
             onLogout={() => askToLeave({ kind: "signout" })}
             wide={
               <nav className="flex flex-wrap items-center gap-3 text-base">

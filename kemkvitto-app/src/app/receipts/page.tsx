@@ -497,7 +497,7 @@ export default function ReceiptsPage() {
             <KemkvittoLogo color={theme.barInk} size="sm" />
           </Link>
           <AppMenu
-            color={theme.barInk}
+            brand={theme.brand}
             onLogout={() => signOut()}
             wide={
               <div className="flex items-center gap-3">
