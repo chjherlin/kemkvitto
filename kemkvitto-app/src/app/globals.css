@@ -22,6 +22,11 @@
   --font-mono: var(--font-jetbrains), monospace;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -98,6 +103,9 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  min-width: 0;
   padding: 0.625rem 1.25rem;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
@@ -108,6 +116,8 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .pos-header-receipt {
@@ -131,7 +141,11 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 .pos-header-nav {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.25rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .pos-header-nav a,
@@ -144,6 +158,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   background: none;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
 }
 .pos-header-nav a:hover,
 .pos-header-nav button:hover {
@@ -153,10 +168,11 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 /* Two-panel layout */
 .pos-layout {
   display: grid;
-  grid-template-columns: 5fr 2fr;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
   gap: 0;
   height: calc(100vh - 52px - 72px); /* header + bottom bar */
   overflow: hidden;
+  min-width: 0;
 }
 
 .pos-left {
@@ -165,6 +181,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   display: grid;
   grid-template-rows: 1fr auto auto;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .pos-right {
@@ -175,6 +192,7 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   flex-direction: column;
   gap: 0.75rem;
   background: color-mix(in srgb, var(--bg) 60%, white);
+  min-width: 0;
 }
 
 /* Section labels */
@@ -393,7 +411,9 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 .pos-dates-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1rem;
+  min-width: 0;
   padding: 0.35rem 0.75rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -629,11 +649,13 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  height: 72px;
+  min-height: 72px;
 }
 
 .pos-bottom-info {
@@ -645,13 +667,17 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 .pos-bottom-right {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .pos-bottom-total {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .pos-submit-btn {
@@ -669,11 +695,40 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 }
 
 /* Responsive: stack panels on smaller screens */
+.receipt-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.receipt-card-main {
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+.receipt-card-who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.receipt-card-action {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .receipt-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .receipt-card-action {
+    width: 100%;
+  }
+}
+
 @media (max-width: 860px) {
   .pos-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     height: auto;
     min-height: calc(100vh - 52px - 72px);
+    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
   }
   .pos-left {
     grid-template-rows: auto auto auto;
@@ -689,6 +744,10 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   }
   .pos-services-strip {
     flex-wrap: wrap;
+  }
+  .pos-service-chip {
+    white-space: normal;
+    min-width: 0;
   }
 }
 

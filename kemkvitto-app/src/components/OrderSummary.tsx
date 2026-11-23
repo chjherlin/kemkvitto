@@ -2,8 +2,6 @@
 
 import { useI18n } from "@/lib/i18n";
 
-const VAT_RATE = 0.25;
-
 export interface OrderItem {
   garment: string;
   qty: number;
@@ -46,8 +44,6 @@ export default function OrderSummary({
       </div>
     );
   }
-
-  const vatAmount = Math.round(total * VAT_RATE / (1 + VAT_RATE));
 
   return (
     <div className="pos-order-list">
@@ -128,12 +124,6 @@ export default function OrderSummary({
             <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{t("order.total")}</span>
             <span className="font-receipt text-lg font-bold" style={{ color: brandColor }}>
               {total} kr
-            </span>
-          </div>
-          <div className="pos-order-line" style={{ marginTop: "-0.25rem" }}>
-            <span className="text-xs" style={{ color: "var(--text-light)" }}>{t("order.vat")}</span>
-            <span className="font-receipt text-xs" style={{ color: "var(--text-light)" }}>
-              {vatAmount} kr
             </span>
           </div>
         </div>
