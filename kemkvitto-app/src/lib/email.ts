@@ -4,6 +4,7 @@ import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, tint } from "./brand";
 import {
+  MAIL_LOGO_URL,
   mailSubject,
   renderMailHtml,
   type MailKind,
@@ -54,10 +55,9 @@ function calculateTotal(lines: MailLine[]): number {
   return lines.reduce((sum, line) => sum + line.qty * line.unitPrice, 0);
 }
 
+/** Public production file. Preview deploys protect NEXTAUTH_URL, so the mail cannot load the logo from there. */
 export function mailLogoUrl(): string {
-  const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
-  const path = "/kemkvitto-logo-dark.png";
-  return base ? `${base}${path}` : path;
+  return MAIL_LOGO_URL;
 }
 
 function mailTheme(brandColor: string): RenderMailInput["theme"] {

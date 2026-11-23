@@ -1,5 +1,7 @@
 /** Email-safe receipt HTML. No local imports, so a plain Node script can render it. */
 
+export const MAIL_LOGO_URL = "https://www.kemkvitto.se/kemkvitto-logo-dark.png";
+
 export type MailLocale = "sv" | "en" | "da" | "no";
 export type MailKind = "receipt" | "ready" | "reminder" | "date";
 
@@ -288,9 +290,21 @@ export function renderMailHtml(input: RenderMailInput): string {
       </td></tr>`
     : "";
 
+  const dropOffRow = (input.dropOffDate || "").trim()
+    ? `<tr>
+              <td style="color:${theme.ink};font-size:16px;padding:4px 0;">${escapeHtml(copy.droppedOff)}</td>
+              <td style="color:${theme.ink};font-size:19px;font-family:${MONO};font-weight:700;text-align:right;padding:4px 0;">${escapeHtml(input.dropOffDate)}</td>
+            </tr>`
+    : "";
+
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+</head>
 <body style="margin:0;padding:0;background:${theme.footer};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${theme.ink};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${theme.footer};padding:24px 0;">
     <tr><td align="center">
@@ -308,10 +322,7 @@ export function renderMailHtml(input: RenderMailInput): string {
         </td></tr>
         <tr><td style="padding:16px 28px 0;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="color:${theme.ink};font-size:16px;padding:4px 0;">${escapeHtml(copy.droppedOff)}</td>
-              <td style="color:${theme.ink};font-size:19px;font-family:${MONO};font-weight:700;text-align:right;padding:4px 0;">${escapeHtml(input.dropOffDate || "—")}</td>
-            </tr>
+            ${dropOffRow}
             <tr>
               <td style="color:${theme.ink};font-size:16px;padding:4px 0;">${escapeHtml(copy.shouldBeReady)}</td>
               <td style="color:${theme.ink};font-size:19px;font-family:${MONO};font-weight:700;text-align:right;padding:4px 0;">${escapeHtml(input.readyDate || "—")}</td>
@@ -342,8 +353,8 @@ export function renderMailHtml(input: RenderMailInput): string {
           <table role="presentation" cellpadding="0" cellspacing="0" align="center">
             <tr>
               <td style="color:${theme.muted};font-size:16px;line-height:22px;vertical-align:middle;padding-right:8px;">${escapeHtml(copy.footer)}</td>
-              <td style="vertical-align:middle;">
-                <img src="${escapeHtml(input.logoSrc)}" alt="kemkvitto" height="22" style="display:block;height:22px;width:auto;border:0;">
+              <td style="vertical-align:middle;background:#ffffff;padding:4px 8px;border-radius:6px;">
+                <img src="${escapeHtml(input.logoSrc)}" alt="kemkvitto" height="22" style="display:block;height:22px;width:auto;border:0;background:#ffffff;">
               </td>
             </tr>
           </table>
