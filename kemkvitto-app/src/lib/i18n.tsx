@@ -14,6 +14,8 @@ const translations = {
   "nav.tag": { sv: "Märke", en: "Tag", da: "Mærke", no: "Merke" },
   "nav.back": { sv: "← Tillbaka", en: "← Back", da: "← Tilbage", no: "← Tilbake" },
   "nav.productPage": { sv: "Produktsidan", en: "Product page", da: "Produktsiden", no: "Produktsiden" },
+  "nav.menu": { sv: "Meny", en: "Menu", da: "Menu", no: "Meny" },
+  "nav.language": { sv: "Språk", en: "Language", da: "Sprog", no: "Språk" },
 
   "settings.backToProduct": { sv: "← Tillbaka till produktsidan", en: "← Back to the product page", da: "← Tilbage til produktsiden", no: "← Tilbake til produktsiden" },
   // Receipt creation

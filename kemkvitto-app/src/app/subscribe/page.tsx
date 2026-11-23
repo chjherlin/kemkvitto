@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import KemkvittoLogo from "@/components/KemkvittoLogo";
+import AppMenu from "@/components/AppMenu";
 import { useI18n } from "@/lib/i18n";
 import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, yearlyPriceEur } from "@/lib/pricing";
 import { brandTheme } from "@/lib/brand";
@@ -119,7 +121,16 @@ export default function SubscribePage() {
     || info.countries?.find((c) => c.code === pricedCountry)?.name?.en;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-10" style={{ color: "#1c1917" }}>
+    <div style={{ color: "#1c1917", minHeight: "100vh" }}>
+      <header style={{ background: theme.bar, color: theme.barInk }}>
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-2">
+          <Link href="/" aria-label={t("nav.productPage")}>
+            <KemkvittoLogo color={theme.barInk} size="sm" />
+          </Link>
+          <AppMenu color={theme.barInk} onLogout={() => signOut()} wide={null} />
+        </div>
+      </header>
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10">
       <h1 className="text-3xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>{t("subscribe.title")}</h1>
       <p>{t("subscribe.lead")}</p>
       <p>{t("subscribe.businessVat")}</p>
@@ -232,6 +243,7 @@ export default function SubscribePage() {
           {t("subscribe.manage")}
         </button>
       )}
+      </div>
     </div>
   );
 }

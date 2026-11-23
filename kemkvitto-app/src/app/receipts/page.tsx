@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
+import AppMenu from "@/components/AppMenu";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
@@ -481,10 +482,16 @@ export default function ReceiptsPage() {
           <Link href="/" aria-label={t("nav.productPage")} style={{ color: theme.barInk }}>
             <KemkvittoLogo color={theme.barInk} size="sm" />
           </Link>
-          <div className="flex items-center gap-3">
-            <LanguageToggle color={theme.barInk} />
-            <span className="text-base font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("receipts.title")}</span>
-          </div>
+          <AppMenu
+            color={theme.barInk}
+            onLogout={() => signOut()}
+            wide={
+              <div className="flex items-center gap-3">
+                <LanguageToggle color={theme.barInk} />
+                <span className="text-base font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("receipts.title")}</span>
+              </div>
+            }
+          />
         </div>
       </header>
 

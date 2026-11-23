@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
+import AppMenu from "@/components/AppMenu";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
@@ -362,11 +363,17 @@ export default function SettingsPage() {
             <KemkvittoLogo color={theme.barInk} size="sm" />
             {businessName && <span className="text-base">/ {businessName}</span>}
           </div>
-          <nav className="flex flex-wrap items-center gap-3 text-base">
-            <LanguageToggle color={theme.barInk} />
-            <Link href="/receipts" style={{ color: theme.barInk }}>{t("nav.receipts")}</Link>
-            <button type="button" onClick={() => askToLeave({ kind: "signout" })} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
-          </nav>
+          <AppMenu
+            color={theme.barInk}
+            onLogout={() => askToLeave({ kind: "signout" })}
+            wide={
+              <nav className="flex flex-wrap items-center gap-3 text-base">
+                <LanguageToggle color={theme.barInk} />
+                <Link href="/receipts" style={{ color: theme.barInk }}>{t("nav.receipts")}</Link>
+                <button type="button" onClick={() => askToLeave({ kind: "signout" })} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
+              </nav>
+            }
+          />
         </div>
       </header>
 
