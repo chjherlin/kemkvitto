@@ -401,6 +401,20 @@ export default function ReceiptsPage() {
     loadReceipts().then(() => setLoading(false));
   }, [status, loadReceipts]);
 
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    function refresh() {
+      if (document.visibilityState === "hidden") return;
+      loadReceipts();
+    }
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [status, loadReceipts]);
+
   const handleSave = useCallback(async (updated: Partial<Receipt>): Promise<boolean> => {
     if (!editingReceipt) return false;
     const res = await fetch(`/api/receipts/${editingReceipt.id}`, {
@@ -525,20 +539,20 @@ export default function ReceiptsPage() {
               return (
                 <div
                   key={r.id}
-                  className="flex flex-wrap items-center gap-3 rounded-2xl p-4"
+                  className="receipt-card rounded-2xl p-4"
                   style={{ background: INK_LIGHT, border: `1px solid ${GREY}` }}
                 >
                   <button
                     type="button"
                     onClick={() => setEditingReceipt(r)}
-                    className="min-w-0 flex-1 text-left"
+                    className="receipt-card-main text-left"
                     style={{ background: "none", border: "none", cursor: "pointer", color: INK_DARK, font: "inherit", padding: 0 }}
                   >
                     <div className="flex flex-wrap items-baseline gap-3">
                       <span style={{ fontFamily: mono.style.fontFamily, fontWeight: 700, fontSize: "18px" }}>
                         #{formatReceiptNumber(r.receipt_number)}
                       </span>
-                      <span className="text-base font-bold">{who}</span>
+                      <span className="receipt-card-who text-base font-bold">{who}</span>
                     </div>
                     <p className="mt-1 text-base" style={{ color: QUIET_GREY }}>
                       {garments ? `${garments} · ` : ""}
@@ -556,7 +570,7 @@ export default function ReceiptsPage() {
                       type="button"
                       onClick={() => sendReminder(r)}
                       disabled={sendingId === r.id}
-                      className="rounded-xl px-4"
+                      className="receipt-card-action rounded-xl px-4"
                       style={{
                         minHeight: "56px",
                         fontSize: "16px",

@@ -1,26 +1,44 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { sendReadyTodayEmail, type WasherInfo } from "@/lib/email";
+import { sendReadyTodayEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
-import { calendarDate } from "@/lib/reminder-list";
+import {
+  cronRequestAuthorized,
+  reminderCandidateDates,
+  reminderSchedule,
+  shouldSendReadyReminder,
+} from "@/lib/country-timezone";
 
+/**
+ * Morning reminder. Vercel calls this once a day at 05:00 UTC and sends
+ * `Authorization: Bearer <CRON_SECRET>`. The older `x-cron-secret` header
+ * is still accepted. Nothing is sent when CRON_SECRET is unset.
+ *
+ * The daily call includes every laundry whose promised date is that
+ * laundry's own local today. A later hourly call uses `?mode=hourly` and
+ * then only sends while local time is 06:00 up to, but not including, 09:00.
+ *
+ * Manual check, with a placeholder rather than a real secret:
+ * curl -H "Authorization: Bearer replace-with-a-long-random-string" \
+ *   http://localhost:3000/api/cron/reminders
+ */
 export async function GET(request: Request) {
-  // Fail closed: a missing or wrong secret never sends mail.
-  const secret = request.headers.get("x-cron-secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  const authorized = cronRequestAuthorized({
+    configuredSecret: process.env.CRON_SECRET,
+    authorization: request.headers.get("authorization"),
+    legacyHeader: request.headers.get("x-cron-secret"),
+  });
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const now = new Date();
+  const schedule = reminderSchedule(request.url);
   const supabase = createServiceClient();
-
-  // Promised dates are calendar days. Laundries are in Sweden, and there is no
-  // timezone column, so "today" is the Stockholm date rather than UTC.
-  const today = calendarDate(new Date(), "Europe/Stockholm");
-
   const { data: receipts, error } = await supabase
     .from("receipts")
     .select("*")
-    .eq("delivery_date", today)
+    .in("delivery_date", reminderCandidateDates(now))
     .eq("reminder_sent", false)
     .neq("customer_email", "");
 
@@ -29,19 +47,27 @@ export async function GET(request: Request) {
   }
 
   if (!receipts || receipts.length === 0) {
-    return NextResponse.json({ message: "No reminders to send", count: 0, date: today });
+    return NextResponse.json({ message: "No reminders to send", count: 0, schedule });
   }
 
-  const washerCache: Record<string, WasherInfo | undefined> = {};
-
+  const washerCache: Record<string, Awaited<ReturnType<typeof loadMailWasher>>> = {};
   let sent = 0;
   for (const receipt of receipts) {
     if (!(receipt.washer_id in washerCache)) {
       washerCache[receipt.washer_id] = await loadMailWasher(supabase, receipt.washer_id);
     }
+    const washer = washerCache[receipt.washer_id];
+    if (!shouldSendReadyReminder({
+      deliveryDate: receipt.delivery_date,
+      countryCode: washer?.country_code,
+      now,
+      schedule,
+    })) {
+      continue;
+    }
 
     try {
-      await sendReadyTodayEmail(receipt, washerCache[receipt.washer_id]);
+      await sendReadyTodayEmail(receipt, washer);
       await supabase.from("receipts").update({ reminder_sent: true }).eq("id", receipt.id);
       sent++;
     } catch (err) {
@@ -49,5 +75,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ message: `Sent ${sent} ready-today emails`, count: sent, date: today });
+  return NextResponse.json({ message: `Sent ${sent} ready-today emails`, count: sent, schedule });
 }
