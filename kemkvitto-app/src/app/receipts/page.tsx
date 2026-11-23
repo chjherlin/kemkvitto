@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
@@ -14,10 +13,7 @@ import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-nu
 import { formatLaundryMoney } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, onBrand } from "@/lib/brand";
 import { formatReminderDate, garmentSummary, isPromisedDatePast, utcTodayISO } from "@/lib/reminder-list";
-
-const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
-const jost = Jost({ subsets: ["latin"], weight: ["700"] });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["700"] });
+import { figtree, jost, mono } from "@/lib/fonts";
 const SENT_GREEN = brandTheme(PALETTE.find((c) => c.id === "green")!.hex).bar;
 const GREY = PALETTE.find((c) => c.id === "grey")!.hex;
 const QUIET_GREY = brandTheme(GREY).bar;

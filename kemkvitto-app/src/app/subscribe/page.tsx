@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
@@ -11,10 +10,7 @@ import AppMenu from "@/components/AppMenu";
 import { useI18n } from "@/lib/i18n";
 import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, pricingConfig, yearlyPriceEur } from "@/lib/pricing";
 import { INK_DARK, INK_LIGHT, brandTheme } from "@/lib/brand";
-
-const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
-const jost = Jost({ subsets: ["latin"], weight: ["700"] });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["700"] });
+import { figtree, jost, mono } from "@/lib/fonts";
 
 interface StatusResponse {
   missingColumns?: boolean;

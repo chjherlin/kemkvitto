@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
@@ -14,10 +13,7 @@ import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 import { currencyAffix } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 import { cloneSettings, settingsAreDirty, type SettingsSnapshot } from "@/lib/settings-dirty";
-
-const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
-const jost = Jost({ subsets: ["latin"], weight: ["700"] });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["700"] });
+import { figtree, jost, mono } from "@/lib/fonts";
 const QUIET_GREY = brandTheme(PALETTE.find((color) => color.id === "grey")!.hex).bar;
 
 type LeaveAction = { kind: "href"; href: string } | { kind: "signout" };
