@@ -140,7 +140,7 @@ export default function SubscribePage() {
             {displayName && <span className="text-base">/ {displayName}</span>}
           </div>
           <AppMenu
-            color={theme.barInk}
+            brand={theme.brand}
             onLogout={() => signOut()}
             wide={
               <nav className="flex flex-wrap items-center gap-3 text-base">

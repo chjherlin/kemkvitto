@@ -259,7 +259,7 @@ export default function NewReceiptPage() {
         </div>
         <div className="pos-header-nav">
           <AppMenu
-            color={theme.barInk}
+            brand={theme.brand}
             onLogout={() => signOut()}
             wide={
               <>
@@ -393,7 +393,7 @@ export default function NewReceiptPage() {
                       top: "50%",
                       transform: "translate(-50%, -50%)",
                       zIndex: 81,
-                      width: "min(20rem, calc(100vw - 2rem))",
+                      width: "min(20rem, calc(100% - 2rem))",
                       background: "#fff",
                       border: "1px solid var(--border)",
                       borderRadius: "0.75rem",
