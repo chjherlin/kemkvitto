@@ -11,8 +11,8 @@ import DateStepper, { getDefaultDeliveryDate } from "@/components/DateStepper";
 import CustomerSearch from "@/components/CustomerSearch";
 import BottomBar from "@/components/BottomBar";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
-import LanguageToggle from "@/components/LanguageToggle";
 import AppMenu from "@/components/AppMenu";
+import WideNav from "@/components/WideNav";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
@@ -261,14 +261,7 @@ export default function NewReceiptPage() {
           <AppMenu
             brand={theme.brand}
             onLogout={() => signOut()}
-            wide={
-              <>
-                <LanguageToggle color={theme.barInk} />
-                <Link href="/receipts">{t("nav.receipts")}</Link>
-                <Link href="/settings">{t("nav.settings")}</Link>
-                <button type="button" onClick={() => signOut()}>{t("nav.logout")}</button>
-              </>
-            }
+            wide={<WideNav color={theme.barInk} current="new" onLogout={() => signOut()} />}
           />
         </div>
       </header>

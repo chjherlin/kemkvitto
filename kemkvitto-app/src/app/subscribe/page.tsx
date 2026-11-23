@@ -5,8 +5,8 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
-import LanguageToggle from "@/components/LanguageToggle";
 import AppMenu from "@/components/AppMenu";
+import WideNav from "@/components/WideNav";
 import { useI18n } from "@/lib/i18n";
 import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, pricingConfig, yearlyPriceEur } from "@/lib/pricing";
 import { INK_DARK, INK_LIGHT, brandTheme } from "@/lib/brand";
@@ -142,14 +142,7 @@ export default function SubscribePage() {
           <AppMenu
             brand={theme.brand}
             onLogout={() => signOut()}
-            wide={
-              <nav className="flex flex-wrap items-center gap-3 text-base">
-                <LanguageToggle color={theme.barInk} />
-                <Link href="/receipts" style={{ color: theme.barInk }}>{t("nav.receipts")}</Link>
-                <Link href="/settings" style={{ color: theme.barInk }}>{t("nav.settings")}</Link>
-                <button type="button" onClick={() => signOut()} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
-              </nav>
-            }
+            wide={<WideNav color={theme.barInk} onLogout={() => signOut()} />}
           />
         </div>
       </header>

@@ -720,23 +720,34 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
   transform: scale(0.97);
 }
 
-/* Responsive: stack panels on smaller screens */
+/* Receipt list cards. The text block must not use a 12rem flex basis:
+   in a column that basis becomes empty height above the buttons. */
 .receipt-card {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
+  padding: 16px;
 }
 .receipt-card-main {
   min-width: 0;
-  flex: 1 1 12rem;
+  flex: 1 1 auto;
+  padding: 0;
 }
 .receipt-card-who {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.receipt-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
 .receipt-card-action {
   min-width: 0;
+  min-height: 56px;
+  flex: 1 1 8rem;
   white-space: normal;
 }
 
@@ -745,9 +756,106 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
     flex-direction: column;
     align-items: stretch;
   }
-  .receipt-card-action {
+  .receipt-card-main {
+    flex: none;
+  }
+  .receipt-card-actions {
     width: 100%;
   }
+}
+
+.wide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.pos-header-nav .wide-nav a,
+.pos-header-nav .wide-nav button,
+.wide-nav a,
+.wide-nav button {
+  font-size: 1rem;
+  padding: 0.25rem 0.15rem;
+  white-space: normal;
+}
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px;
+}
+.edit-sheet {
+  background: var(--bg-card);
+  border-radius: 1.25rem 1.25rem 0 0;
+  width: 100%;
+  max-width: 640px;
+  min-width: 0;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.15);
+}
+.edit-sheet-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 20px 16px 12px;
+}
+.edit-sheet-scroll input,
+.edit-sheet-scroll select,
+.edit-sheet-scroll textarea {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.edit-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 600;
+}
+.edit-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
+}
+.edit-add select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.edit-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.edit-footer button {
+  min-height: 56px;
+  font-size: 16px;
 }
 
 @media (max-width: 860px) {

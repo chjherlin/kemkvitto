@@ -20,6 +20,7 @@ const translations = {
   "settings.backToProduct": { sv: "← Tillbaka till produktsidan", en: "← Back to the product page", da: "← Tilbage til produktsiden", no: "← Tilbake til produktsiden" },
   // Receipt creation
   "receipt.garments": { sv: "Plagg", en: "Garments", da: "Beklædning", no: "Plagg" },
+  "receipt.addGarment": { sv: "Lägg till plagg", en: "Add a garment", da: "Tilføj beklædning", no: "Legg til plagg" },
   "receipt.dates": { sv: "Datum", en: "Dates", da: "Datoer", no: "Datoer" },
   "receipt.dropOff": { sv: "Inlämnat", en: "Drop-off", da: "Indleveret", no: "Innlevert" },
   "receipt.ready": { sv: "Färdigt", en: "Ready", da: "Færdig", no: "Ferdig" },
@@ -51,6 +52,8 @@ const translations = {
   "receipts.sendAgain": { sv: "Skicka igen", en: "Send again", da: "Send igen", no: "Send igjen" },
   "receipts.reminderSent": { sv: "Påminnelse skickad", en: "Reminder sent", da: "Påmindelse sendt", no: "Påminnelse sendt" },
   "receipts.reminderFailed": { sv: "Påminnelsen kunde inte skickas.", en: "The reminder could not be sent.", da: "Påmindelsen kunne ikke sendes.", no: "Påminnelsen kunne ikke sendes." },
+  "receipts.edit": { sv: "Ändra", en: "Edit", da: "Ret", no: "Endre" },
+  "receipts.newReceipt": { sv: "+ Nytt kvitto", en: "+ New receipt", da: "+ Ny kvittering", no: "+ Ny kvittering" },
 
   // Settings
   "settings.title": { sv: "Inställningar", en: "Settings", da: "Indstillinger", no: "Innstillinger" },
