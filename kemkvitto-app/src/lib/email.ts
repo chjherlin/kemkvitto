@@ -1,8 +1,15 @@
 import { Resend } from "resend";
+import { formatLaundryMoney } from "./laundry-defaults";
 import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
-import { DEFAULT_BRAND, brandTheme } from "./brand";
-import { formatLaundryMoney } from "./laundry-defaults";
+import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, tint } from "./brand";
+import {
+  mailSubject,
+  renderMailHtml,
+  type MailKind,
+  type MailLine,
+  type RenderMailInput,
+} from "./email-template";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -25,247 +32,131 @@ interface Receipt {
   services?: string[];
 }
 
-interface WasherInfo {
+export interface WasherInfo {
   business_name: string;
   brand_color: string;
   price_list: Record<string, number>;
+  locale?: string | null;
   country_code?: string | null;
 }
 
 function parseGarmentLines(
   garments: Record<string, number | { qty: number; bet?: boolean }>,
   priceList: Record<string, number>
-): { name: string; qty: number; bet: boolean; unitPrice: number }[] {
-  return Object.entries(garments).map(([name, val]) => {
+): MailLine[] {
+  return Object.entries(garments || {}).map(([name, val]) => {
     const qty = typeof val === "number" ? val : val.qty;
-    return { name, qty, bet: false, unitPrice: priceList[name] ?? 0 };
+    return { name, qty, unitPrice: priceList[name] ?? 0 };
   });
 }
 
-function calculateTotal(
-  lines: { qty: number; unitPrice: number }[],
-): number {
-  return lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
+function calculateTotal(lines: MailLine[]): number {
+  return lines.reduce((sum, line) => sum + line.qty * line.unitPrice, 0);
 }
 
-function buildReceiptHTML(
-  receipt: Receipt,
-  washer: WasherInfo,
-  lines: { name: string; qty: number; bet: boolean; unitPrice: number }[],
-  total: number,
-  showPrices: boolean
-): string {
-  const theme = brandTheme(washer.brand_color || DEFAULT_BRAND);
-  const brandColor = theme.brand;
-  const receiptLabel = formatReceiptNumber(receipt.receipt_number);
-  const vatAmount = Math.round(total * 0.25 / 1.25);
-  const money = (amount: number) => formatLaundryMoney(amount, washer.country_code);
-
-  const lineRows = lines
-    .map((l) => {
-      const lineTotal = l.qty * l.unitPrice;
-      if (!showPrices) {
-        return `<tr>
-        <td style="padding:4px 0;color:#1c1917;font-size:14px;">${l.name}</td>
-        <td style="padding:4px 0;text-align:center;color:#78716c;font-size:14px;">${l.qty}</td>
-      </tr>`;
-      }
-      return `<tr>
-        <td style="padding:4px 0;color:#1c1917;font-size:14px;">${l.name}</td>
-        <td style="padding:4px 0;text-align:center;color:#78716c;font-size:14px;">${l.qty}</td>
-        <td style="padding:4px 0;text-align:right;color:#78716c;font-size:14px;">${money(l.unitPrice)}</td>
-        <td style="padding:4px 0;text-align:right;color:#1c1917;font-size:14px;font-weight:600;">${money(lineTotal)}</td>
-      </tr>`;
-    })
-    .join("");
-
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:0;background:#fafaf9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:24px 0;">
-    <tr><td align="center">
-      <table width="400" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e7e5e4;">
-
-        <!-- Header -->
-        <tr><td style="background:${theme.brand};padding:24px;text-align:center;color:${theme.onBrand};">
-          <h1 style="margin:0;color:${theme.onBrand};font-size:20px;font-weight:700;letter-spacing:0.5px;">${washer.business_name}</h1>
-          <p style="margin:8px 0 0;color:${theme.onBrand};font-size:14px;">Kvitto #${receiptLabel}</p>
-        </td></tr>
-
-        <!-- Customer info -->
-        <tr><td style="padding:20px 24px 0;">
-          ${receipt.customer_name ? `<p style="margin:0 0 4px;color:#1c1917;font-size:15px;font-weight:600;">${receipt.customer_name}</p>` : ""}
-          ${receipt.customer_phone ? `<p style="margin:0 0 4px;color:#78716c;font-size:13px;">${receipt.customer_phone}</p>` : ""}
-          <p style="margin:0;color:#78716c;font-size:13px;">${receipt.customer_email}</p>
-        </td></tr>
-
-        <!-- Dates -->
-        <tr><td style="padding:12px 24px 0;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            ${receipt.drop_off_date ? `<tr>
-              <td style="color:#a8a29e;font-size:12px;padding:2px 0;">Inlämnat</td>
-              <td style="color:#78716c;font-size:12px;text-align:right;padding:2px 0;">${receipt.drop_off_date}</td>
-            </tr>` : ""}
-            <tr>
-              <td style="color:#a8a29e;font-size:12px;padding:2px 0;">Färdigt</td>
-              <td style="color:#78716c;font-size:12px;text-align:right;padding:2px 0;">${receipt.delivery_date}</td>
-            </tr>
-          </table>
-        </td></tr>
-
-        ${receipt.services && receipt.services.length > 0 ? `
-        <tr><td style="padding:8px 24px 0;">
-          <p style="margin:0;color:#a8a29e;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Tjänster</p>
-          <p style="margin:4px 0 0;color:#78716c;font-size:13px;">${receipt.services.map(s => {
-            const names: Record<string, string> = { pressning: "Pressning", starkning: "Stärkning", vikning: "Vikning", express: "Express" };
-            return names[s] || s;
-          }).join(", ")}</p>
-        </td></tr>` : ""}
-
-        <!-- Divider -->
-        <tr><td style="padding:16px 24px 0;">
-          <hr style="border:none;border-top:1px solid #e7e5e4;margin:0;">
-        </td></tr>
-
-        <!-- Line items -->
-        <tr><td style="padding:12px 24px 0;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="padding:4px 0;color:#a8a29e;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Plagg</td>
-              <td style="padding:4px 0;text-align:center;color:#a8a29e;font-size:11px;text-transform:uppercase;">Ant</td>
-              ${showPrices ? `<td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Pris</td>
-              <td style="padding:4px 0;text-align:right;color:#a8a29e;font-size:11px;text-transform:uppercase;">Summa</td>` : ""}
-            </tr>
-            ${lineRows}
-          </table>
-        </td></tr>
-
-        ${showPrices ? `<!-- Total -->
-        <tr><td style="padding:16px 24px 0;">
-          <hr style="border:none;border-top:2px solid #e7e5e4;margin:0 0 12px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="color:#1c1917;font-size:16px;font-weight:700;">TOTALT</td>
-              <td style="text-align:right;color:${brandColor};font-size:20px;font-weight:700;font-family:'Courier New',monospace;">${money(total)}</td>
-            </tr>
-            <tr>
-              <td colspan="2" style="color:#a8a29e;font-size:11px;padding-top:4px;">varav moms (25%): ${money(vatAmount)}</td>
-            </tr>
-          </table>
-        </td></tr>` : ""}
-
-        ${receipt.comment ? `
-        <!-- Comment -->
-        <tr><td style="padding:16px 24px 0;">
-          <hr style="border:none;border-top:1px solid #e7e5e4;margin:0 0 12px;">
-          <p style="margin:0;color:#a8a29e;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Kommentar</p>
-          <p style="margin:4px 0 0;color:#78716c;font-size:13px;">${receipt.comment}</p>
-        </td></tr>` : ""}
-
-        <!-- Footer -->
-        <tr><td style="padding:20px 24px 24px;">
-          <p style="margin:0;color:#d6d3d1;font-size:12px;text-align:center;">Tack för ditt besök!</p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+export function mailLogoUrl(): string {
+  const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
+  const path = "/kemkvitto-logo-dark.png";
+  return base ? `${base}${path}` : path;
 }
 
-export async function sendReceiptEmail(
+function mailTheme(brandColor: string): RenderMailInput["theme"] {
+  const theme = brandTheme(brandColor || DEFAULT_BRAND);
+  const grey = PALETTE.find((color) => color.id === "grey")!.hex;
+  return {
+    brand: theme.brand,
+    onBrand: theme.onBrand,
+    tint: theme.tint,
+    ink: INK_DARK,
+    muted: brandTheme(grey).bar,
+    footer: tint(grey),
+    card: INK_LIGHT,
+  };
+}
+
+function render(
+  kind: MailKind,
   receipt: Receipt,
-  washer?: WasherInfo
-): Promise<void> {
+  washer: WasherInfo | undefined,
+  extra?: { oldDate?: string; sooner?: boolean }
+): { subject: string; html: string } {
   const priceList = washer?.price_list ?? {};
   const showPrices = pricesEnabled(priceList);
   const lines = parseGarmentLines(receipt.garments, priceList);
   const total = receipt.amount_total
     ? receipt.amount_total / 100
     : calculateTotal(lines);
+  const input: RenderMailInput = {
+    kind,
+    locale: washer?.locale,
+    businessName: washer?.business_name?.trim() || "",
+    receiptNumber: formatReceiptNumber(receipt.receipt_number),
+    customerName: receipt.customer_name,
+    customerEmail: receipt.customer_email,
+    dropOffDate: receipt.drop_off_date,
+    readyDate: receipt.delivery_date,
+    oldDate: extra?.oldDate,
+    sooner: extra?.sooner,
+    lines,
+    total,
+    showPrices,
+    comment: receipt.comment,
+    services: receipt.services,
+    theme: mailTheme(washer?.brand_color || DEFAULT_BRAND),
+    logoSrc: mailLogoUrl(),
+    formatMoney: (amount) => formatLaundryMoney(amount, washer?.country_code),
+  };
+  return { subject: mailSubject(input), html: renderMailHtml(input) };
+}
 
-  const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
-
-  const html = buildReceiptHTML(receipt, {
-    business_name: businessName,
-    brand_color: brandColor,
-    price_list: priceList,
-    country_code: washer?.country_code,
-  }, lines, total, showPrices);
-
+async function deliver(to: string, subject: string, html: string, log: string): Promise<void> {
   if (resend) {
     const result = await resend.emails.send({
       from: EMAIL_FROM,
-      to: receipt.customer_email,
-      subject: `Kvitto #${formatReceiptNumber(receipt.receipt_number)} — ${businessName}`,
+      to,
+      subject,
       html,
     });
     if (result.error) {
-      console.error(`Resend error for ${receipt.customer_email}:`, result.error);
+      console.error(`Resend error for ${to}:`, result.error);
       throw new Error(`Resend: ${result.error.message}`);
     }
-    console.log(`Email sent to ${receipt.customer_email} for receipt #${receipt.receipt_number}`, result.data);
-  } else {
-    console.log("=== EMAIL (Resend not configured) ===");
-    console.log(`To: ${receipt.customer_email}`);
-    console.log(`Subject: Kvitto #${receipt.receipt_number} — ${businessName}`);
-    console.log(`Garments: ${lines.map((l) => `${l.name} x${l.qty}`).join(", ")}`);
-    console.log(`Total: ${formatLaundryMoney(total, washer?.country_code)}`);
-    console.log("=====================================");
+    console.log(log, result.data);
+    return;
   }
+  console.log(`=== EMAIL (Resend not configured) ===\nTo: ${to}\nSubject: ${subject}\n${log}\n====================================`);
 }
 
-export async function sendReminderEmail(
-  receipt: Receipt,
-  washer?: WasherInfo
-): Promise<void> {
-  const priceList = washer?.price_list ?? {};
-  const showPrices = pricesEnabled(priceList);
-  const lines = parseGarmentLines(receipt.garments, priceList);
-  const total = receipt.amount_total
-    ? receipt.amount_total / 100
-    : calculateTotal(lines);
-
-  const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
-
-  const fullHtml = buildReceiptHTML(
-    receipt,
-    { business_name: businessName, brand_color: brandColor, price_list: priceList, country_code: washer?.country_code },
-    lines,
-    total,
-    showPrices
+export async function sendReceiptEmail(receipt: Receipt, washer?: WasherInfo): Promise<void> {
+  const { subject, html } = render("receipt", receipt, washer);
+  await deliver(
+    receipt.customer_email,
+    subject,
+    html,
+    `Receipt #${formatReceiptNumber(receipt.receipt_number)}`
   );
+}
 
-  const reminderBanner = `
-        <tr><td style="padding:20px 24px 0;text-align:center;">
-          <div style="background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:16px;">
-            <p style="margin:0;color:#14532d;font-size:16px;font-weight:700;">Din kemtvätt är klar imorgon! 🎉</p>
-            <p style="margin:6px 0 0;color:#166534;font-size:13px;">Välkommen att hämta den ${receipt.delivery_date}.</p>
-          </div>
-        </td></tr>`;
-
-  const html = fullHtml.replace(
-    '</td></tr>\n\n        <!-- Customer info -->',
-    `</td></tr>\n\n        ${reminderBanner}\n\n        <!-- Customer info -->`
+/** Hand-sent from the receipt list, after the promised date. */
+export async function sendReminderEmail(receipt: Receipt, washer?: WasherInfo): Promise<void> {
+  const { subject, html } = render("reminder", receipt, washer);
+  await deliver(
+    receipt.customer_email,
+    subject,
+    html,
+    `Reminder #${formatReceiptNumber(receipt.receipt_number)}`
   );
+}
 
-  if (resend) {
-    await resend.emails.send({
-      from: EMAIL_FROM,
-      to: receipt.customer_email,
-      subject: `Påminnelse: Din kemtvätt är klar imorgon — ${businessName}`,
-      html,
-    });
-    console.log(`Reminder sent to ${receipt.customer_email} for receipt #${formatReceiptNumber(receipt.receipt_number)}`);
-  } else {
-    console.log("=== REMINDER (Resend not configured) ===");
-    console.log(`To: ${receipt.customer_email}, Receipt #${formatReceiptNumber(receipt.receipt_number)}, ready ${receipt.delivery_date}`);
-    console.log("========================================");
-  }
+/** Automatic mail on the promised date itself. */
+export async function sendReadyTodayEmail(receipt: Receipt, washer?: WasherInfo): Promise<void> {
+  const { subject, html } = render("ready", receipt, washer);
+  await deliver(
+    receipt.customer_email,
+    subject,
+    html,
+    `Ready today #${formatReceiptNumber(receipt.receipt_number)}`
+  );
 }
 
 export async function sendDateUpdateEmail(
@@ -274,55 +165,15 @@ export async function sendDateUpdateEmail(
   newDate: string,
   washer?: WasherInfo
 ): Promise<void> {
-  const priceList = washer?.price_list ?? {};
-  const showPrices = pricesEnabled(priceList);
-  const lines = parseGarmentLines(receipt.garments, priceList);
-  const total = receipt.amount_total
-    ? receipt.amount_total / 100
-    : calculateTotal(lines);
-
-  const businessName = washer?.business_name ?? "Kemtvätt";
-  const brandColor = washer?.brand_color ?? DEFAULT_BRAND;
-  const isSooner = newDate < oldDate;
-
-  const updatedReceipt = { ...receipt, delivery_date: newDate };
-  const fullHtml = buildReceiptHTML(
-    updatedReceipt,
-    { business_name: businessName, brand_color: brandColor, price_list: priceList, country_code: washer?.country_code },
-    lines,
-    total,
-    showPrices
+  const updated = { ...receipt, delivery_date: newDate };
+  const { subject, html } = render("date", updated, washer, {
+    oldDate,
+    sooner: newDate < oldDate,
+  });
+  await deliver(
+    receipt.customer_email,
+    subject,
+    html,
+    `Date update #${formatReceiptNumber(receipt.receipt_number)} ${oldDate} -> ${newDate}`
   );
-
-  const banner = isSooner
-    ? `<tr><td style="padding:20px 24px 0;text-align:center;">
-        <div style="background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:16px;">
-          <p style="margin:0;color:#14532d;font-size:16px;font-weight:700;">Goda nyheter! 🎉 Din kemtvätt är klar lite tidigare</p>
-          <p style="margin:6px 0 0;color:#166534;font-size:14px;">Nytt hämtningsdatum: <strong>${newDate}</strong></p>
-          <p style="margin:4px 0 0;color:#4ade80;font-size:12px;text-decoration:line-through;">${oldDate}</p>
-        </div>
-      </td></tr>`
-    : `<tr><td style="padding:20px 24px 0;text-align:center;">
-        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:16px;">
-          <p style="margin:0;color:#713f12;font-size:16px;font-weight:700;">Uppdatering kring din kemtvätt</p>
-          <p style="margin:6px 0 0;color:#92400e;font-size:14px;">Nytt hämtningsdatum: <strong>${newDate}</strong></p>
-          <p style="margin:4px 0 0;color:#a16207;font-size:12px;">Tidigare datum: ${oldDate}</p>
-        </div>
-      </td></tr>`;
-
-  const html = fullHtml.replace(
-    '</td></tr>\n\n        <!-- Customer info -->',
-    `</td></tr>\n\n        ${banner}\n\n        <!-- Customer info -->`
-  );
-
-  const subject = isSooner
-    ? `Goda nyheter! Din kemtvätt är klar tidigare — ${businessName}`
-    : `Uppdatering: Ändrat hämtningsdatum — ${businessName}`;
-
-  if (resend) {
-    await resend.emails.send({ from: EMAIL_FROM, to: receipt.customer_email, subject, html });
-    console.log(`Date update email sent to ${receipt.customer_email}, receipt #${receipt.receipt_number}: ${oldDate} → ${newDate}`);
-  } else {
-    console.log(`=== DATE UPDATE (Resend not configured): ${receipt.customer_email}, #${receipt.receipt_number}, ${oldDate} → ${newDate} ===`);
-  }
 }

@@ -83,7 +83,9 @@ export function isSoldCountry(code: string | null | undefined): boolean {
   return countryByCode(code) !== null;
 }
 
-export function monthlyPriceEur(countryCode: string): number | null {
+export const CHOSEN_COUNTRY_KEY = "kemkvitto-country";
+
+export function monthlyPriceEur(countryCode: string | null | undefined): number | null {
   const country = countryByCode(countryCode);
   if (!country) return null;
   return monthlyPriceFromGdp(country.gdpPppThousands);

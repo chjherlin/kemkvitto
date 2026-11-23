@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
+import { loadMailWasher } from "@/lib/mail-washer";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
 // These columns don't exist on all deployments — stripped and retried if insert fails
@@ -108,11 +109,7 @@ export async function POST(request: Request) {
   let emailSent = false;
   if (customerEmail) {
     try {
-      const { data: washer } = await supabase
-        .from("washers")
-        .select("business_name, brand_color, price_list, country_code")
-        .eq("id", washerId)
-        .single();
+      const washer = await loadMailWasher(supabase, washerId);
 
       // Merge in fields that the DB may not have returned (optional columns)
       const receiptForEmail = {
@@ -124,7 +121,7 @@ export async function POST(request: Request) {
         services: services ?? [],
       };
 
-      await sendReceiptEmail(receiptForEmail, washer ?? undefined);
+      await sendReceiptEmail(receiptForEmail, washer);
       emailSent = true;
       console.log(`Email sent to ${customerEmail} for receipt #${receiptNumber}`);
     } catch (err) {

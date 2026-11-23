@@ -1,25 +1,26 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { sendReminderEmail } from "@/lib/email";
+import { sendReadyTodayEmail, type WasherInfo } from "@/lib/email";
+import { loadMailWasher } from "@/lib/mail-washer";
+import { calendarDate } from "@/lib/reminder-list";
 
 export async function GET(request: Request) {
-  // Require secret to prevent unauthorized triggering
+  // Fail closed: a missing or wrong secret never sends mail.
   const secret = request.headers.get("x-cron-secret");
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createServiceClient();
 
-  // Tomorrow's date in local-friendly ISO format
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowISO = tomorrow.toISOString().split("T")[0];
+  // Promised dates are calendar days. Laundries are in Sweden, and there is no
+  // timezone column, so "today" is the Stockholm date rather than UTC.
+  const today = calendarDate(new Date(), "Europe/Stockholm");
 
   const { data: receipts, error } = await supabase
     .from("receipts")
     .select("*")
-    .eq("delivery_date", tomorrowISO)
+    .eq("delivery_date", today)
     .eq("reminder_sent", false)
     .neq("customer_email", "");
 
@@ -28,30 +29,25 @@ export async function GET(request: Request) {
   }
 
   if (!receipts || receipts.length === 0) {
-    return NextResponse.json({ message: "No reminders to send", count: 0, date: tomorrowISO });
+    return NextResponse.json({ message: "No reminders to send", count: 0, date: today });
   }
 
-  const washerCache: Record<string, { business_name: string; brand_color: string; price_list: Record<string, number>; country_code?: string | null }> = {};
+  const washerCache: Record<string, WasherInfo | undefined> = {};
 
   let sent = 0;
   for (const receipt of receipts) {
-    if (!washerCache[receipt.washer_id]) {
-      const { data: washer } = await supabase
-        .from("washers")
-        .select("business_name, brand_color, price_list, country_code")
-        .eq("id", receipt.washer_id)
-        .single();
-      if (washer) washerCache[receipt.washer_id] = washer;
+    if (!(receipt.washer_id in washerCache)) {
+      washerCache[receipt.washer_id] = await loadMailWasher(supabase, receipt.washer_id);
     }
 
     try {
-      await sendReminderEmail(receipt, washerCache[receipt.washer_id] ?? undefined);
+      await sendReadyTodayEmail(receipt, washerCache[receipt.washer_id]);
       await supabase.from("receipts").update({ reminder_sent: true }).eq("id", receipt.id);
       sent++;
     } catch (err) {
-      console.error(`Failed reminder for receipt ${receipt.id}:`, err);
+      console.error(`Failed ready-today email for receipt ${receipt.id}:`, err);
     }
   }
 
-  return NextResponse.json({ message: `Sent ${sent} reminders`, count: sent, date: tomorrowISO });
+  return NextResponse.json({ message: `Sent ${sent} ready-today emails`, count: sent, date: today });
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail, sendDateUpdateEmail } from "@/lib/email";
+import { loadMailWasher } from "@/lib/mail-washer";
 
 export async function PATCH(
   request: Request,
@@ -69,11 +70,7 @@ export async function PATCH(
 
   if (customerEmail) {
     try {
-      const { data: washer } = await supabase
-        .from("washers")
-        .select("business_name, brand_color, price_list, country_code")
-        .eq("id", washerId)
-        .single();
+      const washer = await loadMailWasher(supabase, washerId);
 
       // Get receipt_number for email subject
       const { data: full } = await supabase
@@ -99,10 +96,10 @@ export async function PATCH(
           updatedReceipt,
           existing.delivery_date,
           deliveryDate,
-          washer ?? undefined
+          washer
         );
       } else {
-        await sendReceiptEmail(updatedReceipt, washer ?? undefined);
+        await sendReceiptEmail(updatedReceipt, washer);
       }
     } catch (err) {
       console.error("Failed to send update email:", err);
