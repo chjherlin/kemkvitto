@@ -75,7 +75,7 @@ export default function GarmentGrid({
               borderColor: active ? brandColor : "var(--border)",
               color: active ? brandColor : "var(--text)",
               position: "relative",
-              overflow: "hidden",
+              overflow: "visible",
               padding: 0,
               cursor: "default",
             }}
@@ -91,8 +91,9 @@ export default function GarmentGrid({
               onTouchEnd={cancelLongPress}
               title={active ? "Long-press to remove" : undefined}
               style={{
-                position: "absolute",
-                inset: 0,
+                position: "relative",
+                width: "100%",
+                minHeight: "56px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -101,7 +102,7 @@ export default function GarmentGrid({
                 border: "none",
                 cursor: "pointer",
                 color: "inherit",
-                padding: "0.375rem",
+                padding: "1rem 0.375rem 0.75rem",
               }}
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
