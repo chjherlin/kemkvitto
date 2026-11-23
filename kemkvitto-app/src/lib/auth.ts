@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { createServiceClient } from "./supabase";
 import { loadWasherBilling } from "./billing";
+import { SESSION_MAX_AGE_SECONDS, SESSION_UPDATE_AGE_SECONDS } from "./session-cookie";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -41,7 +42,12 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    updateAge: SESSION_UPDATE_AGE_SECONDS,
+  },
+  jwt: { maxAge: SESSION_MAX_AGE_SECONDS },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {

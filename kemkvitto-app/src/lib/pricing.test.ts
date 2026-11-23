@@ -54,5 +54,7 @@ test("yearly charge is twelve months minus the discount", () => {
 
 test("unknown countries are not sold", () => {
   assert.equal(monthlyPriceEur("AR"), null);
+  assert.equal(monthlyPriceEur(null), null);
+  assert.equal(monthlyPriceEur(""), null);
   assert.equal(yearlyPriceEur("XX"), null);
 });

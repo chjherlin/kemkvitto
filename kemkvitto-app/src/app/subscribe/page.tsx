@@ -8,7 +8,7 @@ import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
-import { formatEur, monthlyPriceEur, pricingConfig, yearlyPriceEur } from "@/lib/pricing";
+import { CHOSEN_COUNTRY_KEY, formatEur, monthlyPriceEur, pricingConfig, yearlyPriceEur } from "@/lib/pricing";
 import { INK_DARK, INK_LIGHT, brandTheme } from "@/lib/brand";
 
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
@@ -177,8 +177,8 @@ export default function SubscribePage() {
                   const next = e.target.value;
                   setCountryCode(next);
                   try {
-                    if (next) localStorage.setItem("kemkvitto-country", next);
-                    else localStorage.removeItem("kemkvitto-country");
+                    if (next) localStorage.setItem(CHOSEN_COUNTRY_KEY, next);
+                    else localStorage.removeItem(CHOSEN_COUNTRY_KEY);
                   } catch { /* ignore */ }
                 }}
                 className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
