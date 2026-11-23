@@ -34,8 +34,7 @@ export async function PATCH(
 
   const dateChanged = deliveryDate && deliveryDate !== existing.delivery_date;
 
-  // Try full update (including services); fall back without services if column missing
-  let updateError = (await supabase
+  const { error: updateError } = await supabase
     .from("receipts")
     .update({
       garments,
@@ -47,22 +46,8 @@ export async function PATCH(
       amount_total: amountTotal ?? 0,
       ...(dateChanged ? { reminder_sent: false } : {}),
     })
-    .eq("id", id)).error;
-
-  if (updateError?.code === "42703" || updateError?.code === "PGRST204") {
-    updateError = (await supabase
-      .from("receipts")
-      .update({
-        garments,
-        delivery_date: deliveryDate,
-        customer_name: customerName || null,
-        customer_email: customerEmail || "",
-        comment: comment || null,
-        amount_total: amountTotal ?? 0,
-        ...(dateChanged ? { reminder_sent: false } : {}),
-      })
-      .eq("id", id)).error;
-  }
+    .eq("id", id)
+    .eq("washer_id", washerId);
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });

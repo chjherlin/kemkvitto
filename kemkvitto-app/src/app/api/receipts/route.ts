@@ -4,10 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
+import { buildReceiptInsert } from "@/lib/receipt-insert";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
-
-// These columns don't exist on all deployments — stripped and retried if insert fails
-const OPTIONAL_COLUMNS = ["customer_name", "customer_phone", "drop_off_date", "amount_total", "tag_number", "services"];
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -34,41 +32,26 @@ export async function POST(request: Request) {
     ? String(receiptNumber)
     : formatReceiptNumber(parseReceiptCounter(String(receiptNumber)));
 
-  const insertData: Record<string, unknown> = {
-    washer_id: washerId,
-    receipt_number: storedReceiptNumber,
-    tag_number: tagNumber || null,
+  const insertData = buildReceiptInsert({
+    washerId,
+    receiptNumber: storedReceiptNumber,
+    tagNumber,
     garments,
-    delivery_date: deliveryDate,
-    customer_email: customerEmail || "",
-    comment: comment || null,
-    customer_name: customerName || null,
-    customer_phone: customerPhone || null,
-    drop_off_date: dropOffDate || null,
-    amount_total: amountTotal || 0,
-    services: services ?? [],
-  };
+    deliveryDate,
+    dropOffDate,
+    comment,
+    customerName,
+    customerPhone,
+    customerEmail,
+    amountTotal,
+    services,
+  });
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("receipts")
     .insert(insertData)
     .select("*")
     .single();
-
-  // If a column doesn't exist (PGRST204 / 42703), strip all optional columns and retry
-  if (error?.code === "PGRST204" || error?.code === "42703") {
-    console.log("Stripping optional columns and retrying insert");
-    for (const col of OPTIONAL_COLUMNS) {
-      delete insertData[col];
-    }
-    const fallback = await supabase
-      .from("receipts")
-      .insert(insertData)
-      .select("*")
-      .single();
-    data = fallback.data;
-    error = fallback.error;
-  }
 
   if (error) {
     console.error("Receipt insert error:", error.code, error.message);

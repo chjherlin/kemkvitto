@@ -5,8 +5,8 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KemkvittoLogo from "@/components/KemkvittoLogo";
-import LanguageToggle from "@/components/LanguageToggle";
 import AppMenu from "@/components/AppMenu";
+import WideNav from "@/components/WideNav";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
@@ -105,99 +105,62 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
   }
 
   useEffect(() => {
-    const scrollY = window.scrollY;
+    const html = document.documentElement;
     const body = document.body;
-    const previous = {
-      overflow: body.style.overflow,
-      position: body.style.position,
-      top: body.style.top,
-      width: body.style.width,
-    };
+    const previous = { html: html.style.overflow, body: body.style.overflow };
+    html.style.overflow = "hidden";
     body.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = "100%";
     return () => {
-      body.style.overflow = previous.overflow;
-      body.style.position = previous.position;
-      body.style.top = previous.top;
-      body.style.width = previous.width;
-      window.scrollTo(0, scrollY);
+      html.style.overflow = previous.html;
+      body.style.overflow = previous.body;
     };
   }, []);
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", overscrollBehavior: "none" }}
+      className="edit-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        style={{
-          background: "var(--bg-card)",
-          borderRadius: "1.25rem 1.25rem 0 0",
-          width: "100%",
-          maxWidth: "640px",
-          maxHeight: "90dvh",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          boxShadow: "0 -4px 32px rgba(0,0,0,0.15)",
-        }}
-      >
-        <div
-          style={{
-            overflowY: "auto",
-            WebkitOverflowScrolling: "touch",
-            overscrollBehavior: "contain",
-            flex: "1 1 auto",
-            minHeight: 0,
-            maxHeight: "90dvh",
-            padding: "1.5rem 1.5rem 0.75rem",
-          }}
-        >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-          <div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "1.25rem", fontWeight: 700, color: brandColor }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="edit-receipt-title" className="edit-sheet">
+        <div className="edit-sheet-scroll">
+        <div className="edit-row" style={{ justifyContent: "space-between", marginBottom: "1.25rem", alignItems: "flex-start" }}>
+          <div style={{ minWidth: 0 }}>
+            <span id="edit-receipt-title" style={{ fontFamily: mono.style.fontFamily, fontSize: "1.25rem", fontWeight: 700, color: brandColor }}>
               #{shownNumber}
             </span>
             {receipt.customer_name && (
-              <span style={{ marginLeft: "0.75rem", fontWeight: 600, color: "var(--text)" }}>{receipt.customer_name}</span>
+              <span style={{ marginLeft: "0.75rem", fontWeight: 600, color: "var(--text)", overflowWrap: "anywhere" }}>{receipt.customer_name}</span>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.5rem", color: "var(--text-light)", lineHeight: 1 }}
+            aria-label={t("nav.back")}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.5rem", color: "var(--text-light)", lineHeight: 1, minWidth: 44, minHeight: 44 }}
           >×</button>
         </div>
 
-        {/* Garments */}
         <div style={{ marginBottom: "1rem" }}>
-          <div className="pos-section-label">Plagg</div>
+          <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "0.375rem" }}>{t("receipt.garments")}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
             {Object.entries(garments).map(([name, qty]) => (
-              <div key={name} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ flex: 1, fontSize: "0.875rem", fontWeight: 500 }}>{tGarment(name)}</span>
-                <button type="button" onClick={() => setQty(name, qty - 1)} className="pos-qty-btn">−</button>
-                <span style={{ fontFamily: "'JetBrains Mono'", width: "2rem", textAlign: "center", fontWeight: 700, color: brandColor }}>{qty}</span>
-                <button type="button" onClick={() => setQty(name, qty + 1)} className="pos-qty-btn">+</button>
+              <div key={name} className="edit-row">
+                <span className="edit-row-name">{tGarment(name)}</span>
+                <button type="button" onClick={() => setQty(name, qty - 1)} className="pos-qty-btn" style={{ width: 44, height: 44, fontSize: "16px" }}>−</button>
+                <span style={{ fontFamily: mono.style.fontFamily, width: "2rem", textAlign: "center", fontWeight: 700, color: brandColor, fontSize: "16px" }}>{qty}</span>
+                <button type="button" onClick={() => setQty(name, qty + 1)} className="pos-qty-btn" style={{ width: 44, height: 44, fontSize: "16px" }}>+</button>
                 <button type="button" onClick={() => setQty(name, 0)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-light)", fontSize: "1rem", padding: "0 0.25rem" }}>×</button>
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-light)", fontSize: "16px", minWidth: 44, minHeight: 44 }}>×</button>
               </div>
             ))}
           </div>
-          {/* Add garment */}
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.625rem" }}>
+          <div className="edit-add">
             <select
               value={addGarment}
               onChange={(e) => setAddGarment(e.target.value)}
               className="pos-input"
-              style={{ flex: 1, fontSize: "0.8125rem" }}
             >
-              <option value="">— Lägg till plagg —</option>
+              <option value="">— {t("receipt.addGarment")} —</option>
               {garmentList.filter(g => garments[g] === undefined).map(g => (
                 <option key={g} value={g}>{tGarment(g)}</option>
               ))}
@@ -207,13 +170,14 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
               onClick={handleAddGarment}
               disabled={!addGarment}
               style={{
-                padding: "0.5rem 0.875rem",
+                minWidth: 56,
+                minHeight: 56,
                 borderRadius: "0.5rem",
                 border: "none",
                 backgroundColor: addGarment ? brandColor : "var(--border)",
                 color: addGarment ? onBrand(brandColor) : "var(--text-light)",
                 fontWeight: 700,
-                fontSize: "0.875rem",
+                fontSize: "16px",
                 cursor: addGarment ? "pointer" : "default",
               }}
             >+</button>
@@ -222,8 +186,8 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
 
         {/* Services */}
         <div style={{ marginBottom: "1rem" }}>
-          <div className="pos-section-label">{t("receipt.services" as Parameters<typeof t>[0]) || "Tjänster"}</div>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "0.375rem" }}>{t("receipt.services")}</div>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", minWidth: 0 }}>
             {serviceKeys.map((svc) => {
               const active = services.includes(svc);
               return (
@@ -232,13 +196,14 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
                   type="button"
                   onClick={() => setServices(active ? services.filter(s => s !== svc) : [...services, svc])}
                   style={{
-                    padding: "0.375rem 0.75rem",
+                    padding: "0.5rem 0.75rem",
                     borderRadius: "0.5rem",
                     border: `2px solid ${active ? brandColor : "var(--border)"}`,
                     backgroundColor: active ? `color-mix(in srgb, ${brandColor} 12%, white)` : "var(--bg-card)",
                     color: active ? brandColor : "var(--text-muted)",
                     fontWeight: 600,
-                    fontSize: "0.8125rem",
+                    fontSize: "16px",
+                    minHeight: 44,
                     cursor: "pointer",
                   }}
                 >
@@ -251,20 +216,20 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
         </div>
 
         {/* Delivery date */}
-        <div style={{ marginBottom: "1rem" }}>
-          <div className="pos-section-label">{t("receipt.ready")}</div>
-          <input
-            type="date"
-            value={deliveryDate}
-            onChange={(e) => setDeliveryDate(e.target.value)}
-            className="pos-input"
-            style={{ width: "100%" }}
-          />
+        <div style={{ marginBottom: "1rem", minWidth: 0 }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "0.375rem" }}>{t("receipt.ready")}</div>
+          <div style={{ minWidth: 0, overflow: "hidden" }}>
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className="pos-input"
+            />
+          </div>
         </div>
 
-        {/* Customer */}
-        <div style={{ marginBottom: "1rem" }}>
-          <div className="pos-section-label">{t("receipt.customer")}</div>
+        <div style={{ marginBottom: "1rem", minWidth: 0 }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "0.375rem" }}>{t("receipt.customer")}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <input
               type="text"
@@ -286,8 +251,8 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
         </div>
 
         {/* Comment */}
-        <div style={{ marginBottom: "1.25rem" }}>
-          <div className="pos-section-label">{t("receipt.comment")}</div>
+        <div style={{ marginBottom: "1.25rem", minWidth: 0 }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "0.375rem" }}>{t("receipt.comment")}</div>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -300,51 +265,42 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
 
         {/* Total */}
         {showPrices && grandTotal > 0 && (
-          <div style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+          <div style={{ marginBottom: "1rem", fontSize: "16px", color: "var(--text-muted)" }}>
             Totalt: <span className="font-receipt" style={{ fontWeight: 700, fontSize: "1rem", color: brandColor }}>{formatLaundryMoney(grandTotal, countryCode)}</span>
           </div>
         )}
 
         {saveError && (
-          <p style={{ color: "var(--danger)", fontSize: "0.8125rem", marginBottom: "0.5rem", textAlign: "center" }}>{saveError}</p>
+          <p style={{ color: "var(--danger)", fontSize: "16px", marginBottom: "0.5rem", textAlign: "center" }}>{saveError}</p>
         )}
         </div>
-        <div
-          style={{
-            flex: "0 0 auto",
-            display: "flex",
-            gap: "0.75rem",
-            padding: "0.75rem 1.5rem 1.25rem",
-            borderTop: "1px solid var(--border)",
-            background: "var(--bg-card)",
-          }}
-        >
+        <div className="edit-footer">
           {confirmDelete ? (
             <>
-              <span style={{ flex: 1, fontSize: "0.8125rem", color: "var(--danger)", display: "flex", alignItems: "center" }}>
+              <span style={{ flex: "1 1 8rem", fontSize: "16px", color: "var(--danger)", display: "flex", alignItems: "center", minWidth: 0 }}>
                 Ta bort kvitto #{shownNumber}?
               </span>
               <button type="button" onClick={() => setConfirmDelete(false)}
-                style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem" }}>
+                style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600 }}>
                 Avbryt
               </button>
               <button type="button" onClick={onDelete}
-                style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", border: "none", backgroundColor: "var(--danger)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
+                style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", border: "none", backgroundColor: "var(--danger)", color: "white", cursor: "pointer", fontWeight: 700 }}>
                 Ta bort
               </button>
             </>
           ) : (
             <>
               <button type="button" onClick={() => setConfirmDelete(true)}
-                style={{ minHeight: "48px", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.8125rem" }}>
+                style={{ padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", color: "var(--text-muted)", fontWeight: 600 }}>
                 Ta bort
               </button>
               <button type="button" onClick={onClose}
-                style={{ flex: 1, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.875rem" }}>
+                style={{ flex: 1, padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600 }}>
                 Avbryt
               </button>
               <button type="button" onClick={handleSave} disabled={saving}
-                style={{ flex: 2, minHeight: "48px", padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: saving ? "var(--text-light)" : onBrand(brandColor), cursor: saving ? "default" : "pointer", fontWeight: 700, fontSize: "0.875rem" }}>
+                style={{ flex: 2, padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: saving ? "var(--text-light)" : onBrand(brandColor), cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
                 {saving ? "Sparar…" : "Spara ändringar"}
               </button>
             </>
@@ -499,12 +455,7 @@ export default function ReceiptsPage() {
           <AppMenu
             brand={theme.brand}
             onLogout={() => signOut()}
-            wide={
-              <div className="flex items-center gap-3">
-                <LanguageToggle color={theme.barInk} />
-                <span className="text-base font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("receipts.title")}</span>
-              </div>
-            }
+            wide={<WideNav color={theme.barInk} current="receipts" onLogout={() => signOut()} />}
           />
         </div>
       </header>
@@ -516,7 +467,26 @@ export default function ReceiptsPage() {
       )}
 
       <main className="mx-auto flex w-full flex-col gap-4 px-4 py-8" style={{ maxWidth: "720px" }}>
-        <h1 className="text-3xl font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("receipts.title")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("receipts.title")}</h1>
+          <Link
+            href="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "56px",
+              padding: "0 1.25rem",
+              borderRadius: "0.75rem",
+              background: theme.brand,
+              color: theme.onBrand,
+              fontWeight: 700,
+              fontSize: "16px",
+            }}
+          >
+            {t("receipts.newReceipt")}
+          </Link>
+        </div>
         <input
           type="search"
           value={searchQuery}
@@ -542,14 +512,14 @@ export default function ReceiptsPage() {
               return (
                 <div
                   key={r.id}
-                  className="receipt-card rounded-2xl p-4"
+                  className="receipt-card rounded-2xl"
                   style={{ background: INK_LIGHT, border: `1px solid ${GREY}` }}
                 >
                   <button
                     type="button"
                     onClick={() => setEditingReceipt(r)}
                     className="receipt-card-main text-left"
-                    style={{ background: "none", border: "none", cursor: "pointer", color: INK_DARK, font: "inherit", padding: 0 }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: INK_DARK, font: "inherit" }}
                   >
                     <div className="flex flex-wrap items-baseline gap-3">
                       <span style={{ fontFamily: mono.style.fontFamily, fontWeight: 700, fontSize: "18px" }}>
@@ -568,25 +538,41 @@ export default function ReceiptsPage() {
                       </p>
                     )}
                   </button>
-                  {past && (
+                  <div className="receipt-card-actions">
                     <button
                       type="button"
-                      onClick={() => sendReminder(r)}
-                      disabled={sendingId === r.id}
+                      onClick={() => setEditingReceipt(r)}
                       className="receipt-card-action rounded-xl px-4"
                       style={{
-                        minHeight: "56px",
                         fontSize: "16px",
                         background: INK_LIGHT,
-                        border: `2px solid ${sentAt ? QUIET_GREY : INK_DARK}`,
-                        color: sentAt ? QUIET_GREY : INK_DARK,
-                        fontWeight: sentAt ? 400 : 700,
-                        cursor: sendingId === r.id ? "default" : "pointer",
+                        border: `2px solid ${theme.brand}`,
+                        color: INK_DARK,
+                        fontWeight: 700,
+                        cursor: "pointer",
                       }}
                     >
-                      {sentAt ? t("receipts.sendAgain") : t("receipts.sendReminder")}
+                      {t("receipts.edit")}
                     </button>
-                  )}
+                    {past && (
+                      <button
+                        type="button"
+                        onClick={() => sendReminder(r)}
+                        disabled={sendingId === r.id}
+                        className="receipt-card-action rounded-xl px-4"
+                        style={{
+                          fontSize: "16px",
+                          background: INK_LIGHT,
+                          border: `2px solid ${sentAt ? QUIET_GREY : INK_DARK}`,
+                          color: sentAt ? QUIET_GREY : INK_DARK,
+                          fontWeight: sentAt ? 400 : 700,
+                          cursor: sendingId === r.id ? "default" : "pointer",
+                        }}
+                      >
+                        {sentAt ? t("receipts.sendAgain") : t("receipts.sendReminder")}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
