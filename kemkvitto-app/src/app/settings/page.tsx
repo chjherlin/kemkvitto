@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { Figtree, JetBrains_Mono, Jost } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import KemkvittoLogo from "@/components/KemkvittoLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
-import { DEFAULT_BRAND, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
+import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
+import { cloneSettings, settingsAreDirty, type SettingsSnapshot } from "@/lib/settings-dirty";
+
+const figtree = Figtree({ subsets: ["latin"], weight: ["400", "600", "700"] });
+const jost = Jost({ subsets: ["latin"], weight: ["700"] });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["700"] });
+const QUIET_GREY = brandTheme(PALETTE.find((color) => color.id === "grey")!.hex).bar;
+
+type LeaveAction = { kind: "href"; href: string } | { kind: "signout" };
 
 function ItemListEditor({
   title,
@@ -39,7 +49,7 @@ function ItemListEditor({
     <section>
       <h2
         className="mb-3 text-sm font-semibold uppercase tracking-wider"
-        style={{ color: "var(--text-muted)" }}
+        style={{ color: "#78716c" }}
       >
         {title}
       </h2>
@@ -55,8 +65,8 @@ function ItemListEditor({
               value={item}
               onChange={(e) => onRename(idx, e.target.value)}
               placeholder={isService ? "Tjänstnamn..." : "Plaggnamn..."}
-              className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
-              style={{ color: "var(--text)" }}
+              className="flex-1 bg-transparent text-base font-bold focus:outline-none"
+              style={{ color: "#1c1917", minHeight: "56px" }}
             />
             {showPrices && (
               <>
@@ -67,18 +77,18 @@ function ItemListEditor({
                   value={item ? (priceList[item] || "") : ""}
                   onChange={(e) => onPriceChange(item, e.target.value)}
                   disabled={!item}
-                  className="w-20 rounded-lg border bg-gray-50 px-2 py-2 text-right text-sm font-medium"
-                  style={{ borderColor: "var(--border)" }}
+                  className="w-24 rounded-lg border bg-white px-2 text-right text-base"
+                  style={{ borderColor: "#e7e5e4", fontFamily: mono.style.fontFamily, fontWeight: 700, minHeight: "48px", color: "#1c1917" }}
                   aria-label={`${item} kr`}
                 />
-                <span className="text-xs" style={{ color: "var(--text-light)" }}>kr</span>
+                <span className="text-base" style={{ color: "#44403c" }}>kr</span>
               </>
             )}
             <button
               type="button"
               onClick={() => onRemove(idx)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition-colors hover:bg-red-50 hover:text-red-500"
-              style={{ color: "var(--text-light)" }}
+              className="flex items-center justify-center text-base"
+              style={{ color: "#44403c", minWidth: "44px", minHeight: "44px", background: "none", border: "none" }}
               title="Ta bort"
             >×</button>
           </div>
@@ -87,8 +97,8 @@ function ItemListEditor({
       <button
         type="button"
         onClick={onAdd}
-        className="mt-3 flex items-center gap-1.5 rounded-xl border-2 border-dashed px-4 py-2.5 text-sm font-medium transition-colors hover:border-current"
-        style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 text-base font-semibold"
+        style={{ borderColor: "#d6d3d1", color: "#1c1917", minHeight: "56px", background: "#fff" }}
       >
         <span style={{ fontSize: "1rem", lineHeight: 1 }}>+</span>
         {addLabel}
@@ -113,6 +123,11 @@ export default function SettingsPage() {
   const [resetDone, setResetDone] = useState(false);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState<SettingsSnapshot | null>(null);
+  const [pendingLeave, setPendingLeave] = useState<LeaveAction | null>(null);
+  const dirtyRef = useRef(false);
+  const allowLeave = useRef(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -128,12 +143,25 @@ export default function SettingsPage() {
         setBusinessName(data.businessName || "");
         setGarmentList(data.garmentList || []);
         setServiceList(data.serviceList || []);
-        setResetNumber(formatReceiptNumber(data.nextReceiptNumber ?? 1));
+        const loadedNumber = formatReceiptNumber(data.nextReceiptNumber ?? 1);
+        setResetNumber(loadedNumber);
+        setBaseline(cloneSettings({
+          brandColor: data.brandColor || DEFAULT_BRAND,
+          businessName: data.businessName || "",
+          priceList: data.priceList || {},
+          garmentList: data.garmentList || [],
+          serviceList: data.serviceList || [],
+          receiptNumber: loadedNumber,
+        }));
         setLoading(false);
       });
+    fetch("/api/subscription/status")
+      .then((r) => r.json())
+      .then((data) => setSubscriptionStatus(data.status ?? null))
+      .catch(() => setSubscriptionStatus(null));
   }, [status]);
 
-  async function handleSave() {
+  async function persistChanges(): Promise<boolean> {
     setSaving(true);
     setSaveError("");
     const res = await fetch("/api/settings", {
@@ -141,14 +169,117 @@ export default function SettingsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brandColor, priceList, businessName, garmentList, serviceList }),
     });
-    setSaving(false);
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } else {
+    if (!res.ok) {
+      setSaving(false);
       const body = await res.json().catch(() => ({}));
       setSaveError(body.error || "Kunde inte spara. Försök igen.");
+      return false;
     }
+    let nextNumber = resetNumber;
+    if (baseline && resetNumber !== baseline.receiptNumber) {
+      const next = parseReceiptCounter(resetNumber || "1");
+      const numberRes = await fetch("/api/receipts/reset-number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nextReceiptNumber: next }),
+      });
+      if (!numberRes.ok) {
+        setSaving(false);
+        setSaveError("Kunde inte spara. Försök igen.");
+        setBaseline(cloneSettings({
+          brandColor,
+          businessName,
+          priceList,
+          garmentList,
+          serviceList,
+          receiptNumber: baseline.receiptNumber,
+        }));
+        return false;
+      }
+      nextNumber = formatReceiptNumber(next);
+      setResetNumber(nextNumber);
+    }
+    setBaseline(cloneSettings({
+      brandColor,
+      businessName,
+      priceList,
+      garmentList,
+      serviceList,
+      receiptNumber: nextNumber,
+    }));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    return true;
+  }
+
+  const snapshot: SettingsSnapshot = {
+    brandColor,
+    businessName,
+    priceList,
+    garmentList,
+    serviceList,
+    receiptNumber: resetNumber,
+  };
+  const dirty = baseline != null && settingsAreDirty(snapshot, baseline);
+  dirtyRef.current = dirty;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (allowLeave.current || !dirtyRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (allowLeave.current || !dirtyRef.current) return;
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as Element | null)?.closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || anchor.getAttribute("target") === "_blank") return;
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingLeave({ kind: "href", href: `${url.pathname}${url.search}${url.hash}` });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingLeave) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPendingLeave(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pendingLeave]);
+
+  function follow(action: LeaveAction) {
+    allowLeave.current = true;
+    dirtyRef.current = false;
+    if (action.kind === "signout") {
+      void signOut();
+      return;
+    }
+    router.push(action.href);
+  }
+
+  function askToLeave(action: LeaveAction) {
+    if (!dirtyRef.current) {
+      follow(action);
+      return;
+    }
+    setPendingLeave(action);
   }
 
   const usePrices = pricesEnabled(priceList);
@@ -213,128 +344,105 @@ export default function SettingsPage() {
     );
   }
 
+  const previewNumber = formatReceiptNumber(parseReceiptCounter(resetNumber || "1"));
+  const subscriptionLead = subscriptionStatus === "trialing"
+    ? t("subscribe.trialing")
+    : subscriptionStatus === "active"
+      ? t("subscribe.active")
+      : "";
+  const subscriptionLine = subscriptionLead
+    ? `${subscriptionLead.replace(/\.$/, "")} · ${t("subscribe.manage")}`
+    : t("subscribe.manage");
+
   return (
-    <div className="min-h-screen" style={{ background: theme.tint, minHeight: '100vh' }}>
-      <header
-        className="sticky top-0 z-20 border-b"
-        style={{
-          backgroundColor: theme.bar,
-          borderColor: "transparent",
-          color: theme.barInk,
-        }}
-      >
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link
-            href="/"
-            className="text-sm font-medium"
-            style={{ color: theme.barInk }}
-          >
-            {t("nav.back")}
-          </Link>
-          <h1
-            className="text-lg font-bold"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            {t("settings.title")}
-          </h1>
+    <div className={figtree.className} style={{ background: theme.tint, color: "#1c1917", minHeight: "100vh", fontSize: "16px" }}>
+      <header style={{ background: theme.bar, color: theme.barInk }}>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-2">
-            <LanguageToggle />
-            {saveError && (
-              <span className="text-xs font-medium" style={{ color: "var(--danger)" }}>{saveError}</span>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-lg px-4 py-2 text-sm font-semibold"
-              style={{ backgroundColor: theme.brand, color: theme.onBrand }}
-            >
-              {saved ? t("settings.saved") : saving ? t("settings.saving") : t("settings.save")}
-            </button>
+            <KemkvittoLogo color={theme.barInk} size="sm" />
+            {businessName && <span className="text-base">/ {businessName}</span>}
           </div>
+          <nav className="flex flex-wrap items-center gap-3 text-base">
+            <LanguageToggle color={theme.barInk} />
+            <Link href="/receipts" style={{ color: theme.barInk }}>{t("nav.receipts")}</Link>
+            <button type="button" onClick={() => askToLeave({ kind: "signout" })} style={{ color: theme.barInk, background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}>{t("nav.logout")}</button>
+          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-8 px-4 py-6">
-        <section>
-          <Link
-            href="/subscribe"
-            className="touch-target flex w-full items-center rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium"
-            style={{ borderColor: "var(--border)", color: "#1c1917", minHeight: "48px" }}
+      <main className="mx-auto flex w-full flex-col gap-4 px-4 py-8" style={{ maxWidth: "410px" }}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <Link href="/" className="text-base font-medium" style={{ color: "#44403c" }}>{t("settings.backToProduct")}</Link>
+            <h1 className="mt-2 text-3xl font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("settings.title")}</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => { void persistChanges(); }}
+            disabled={saving}
+            className="rounded-xl px-4 text-base font-bold disabled:opacity-50"
+            style={{ background: theme.brand, color: theme.onBrand, minHeight: "56px" }}
           >
-            {t("settings.subscription")}
-          </Link>
-        </section>
+            {saved ? t("settings.saved") : saving ? t("settings.saving") : t("settings.save")}
+          </button>
+        </div>
+        {saveError && <p role="alert" className="text-base" style={{ color: "#7f1d1d" }}>{saveError}</p>}
 
-        {/* Business name */}
-        <section>
-          <h2
-            className="mb-3 text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
+        <Card label={t("settings.company")}>
+          <label className="block text-base font-medium">
             {t("settings.businessName")}
-          </h2>
-          <input
-            type="text"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            className="touch-target w-full rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium"
-            style={{ borderColor: "var(--border)" }}
-          />
-        </section>
-
-        {/* Receipt number */}
-        <section>
-          <h2
-            className="mb-3 text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("settings.receiptNumber")}
-          </h2>
-          <div className="flex items-center gap-3">
             <input
               type="text"
-              inputMode="numeric"
-              value={resetNumber}
-              onChange={(e) => setResetNumber(e.target.value.replace(/[^\d]/g, ""))}
-              onBlur={() => {
-                if (!resetNumber) return;
-                setResetNumber(formatReceiptNumber(parseReceiptCounter(resetNumber)));
-              }}
-              placeholder={t("settings.receiptNumberPlaceholder")}
-              className="touch-target flex-1 rounded-xl border-2 bg-white px-4 py-4 text-lg font-medium font-receipt"
-              style={{ borderColor: "var(--border)", color: "#1c1917" }}
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              className="mt-1 w-full rounded-xl border-2 bg-white px-4 text-base"
+              style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917" }}
             />
-            <button
-              type="button"
-              onClick={async () => {
-                if (!resetNumber) return;
-                const next = parseReceiptCounter(resetNumber);
-                await fetch("/api/receipts/reset-number", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ nextReceiptNumber: next }),
-                });
-                setResetNumber(formatReceiptNumber(next));
-                setResetDone(true);
-                setTimeout(() => setResetDone(false), 2000);
-              }}
-              disabled={!resetNumber}
-              className="rounded-xl px-6 py-4 text-sm font-semibold"
-              style={{ backgroundColor: resetNumber ? theme.brand : "var(--border)", color: resetNumber ? theme.onBrand : "var(--text-light)", minHeight: "48px" }}
-            >
-              {resetDone ? t("settings.receiptNumberReset") : t("settings.receiptNumberSet")}
-            </button>
-          </div>
-        </section>
+          </label>
+          <label className="mt-4 block text-base font-medium">
+            {t("settings.nextNumber")}
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={resetNumber}
+                onChange={(e) => setResetNumber(e.target.value.replace(/[^\d]/g, ""))}
+                onBlur={() => {
+                  if (!resetNumber) return;
+                  setResetNumber(formatReceiptNumber(parseReceiptCounter(resetNumber)));
+                }}
+                className="min-w-0 flex-1 rounded-xl border-2 bg-white px-4"
+                style={{ borderColor: "#e7e5e4", minHeight: "56px", color: "#1c1917", fontFamily: mono.style.fontFamily, fontWeight: 700, fontSize: "21px", letterSpacing: "0.06em" }}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!resetNumber) return;
+                  const next = parseReceiptCounter(resetNumber);
+                  const numberRes = await fetch("/api/receipts/reset-number", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nextReceiptNumber: next }),
+                  });
+                  if (!numberRes.ok) return;
+                  const formatted = formatReceiptNumber(next);
+                  setResetNumber(formatted);
+                  setBaseline((prev) => prev ? cloneSettings({ ...prev, receiptNumber: formatted }) : prev);
+                  setResetDone(true);
+                  setTimeout(() => setResetDone(false), 2000);
+                }}
+                disabled={!resetNumber}
+                className="rounded-xl border-2 bg-white px-3 text-base font-semibold"
+                style={{ borderColor: theme.brand, color: "#1c1917", minHeight: "56px" }}
+              >
+                {resetDone ? t("settings.receiptNumberReset") : t("settings.changeNumber")}
+              </button>
+            </div>
+          </label>
+          <p className="mt-3 text-base" style={{ color: "#44403c" }}>{t("settings.numberHelp")}</p>
+        </Card>
 
-        {/* Brand color */}
-        <section>
-          <h2
-            className="mb-3 text-sm font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {t("settings.brandColor")}
-          </h2>
+        <Card label={t("settings.brandColor")}>
           <div className="flex flex-wrap gap-3">
             {PALETTE.map((color) => {
               const selected = selectedBase === color.hex.toLowerCase();
@@ -345,17 +453,19 @@ export default function SettingsPage() {
                   aria-label={color.name}
                   aria-pressed={selected}
                   onClick={() => setBrandColor(applyStrength(color.hex, selectedStrength))}
-                  className="h-12 w-12 rounded-xl"
+                  className="rounded-xl"
                   style={{
+                    width: "44px",
+                    height: "44px",
                     backgroundColor: color.hex,
-                    outline: selected ? `3px solid ${color.hex}` : "2px solid transparent",
-                    outlineOffset: selected ? "3px" : "0",
+                    outline: selected ? `3px solid ${INK_DARK}` : "2px solid transparent",
+                    outlineOffset: "3px",
                   }}
                 />
               );
             })}
           </div>
-          <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label={t("settings.strength")}>
+          <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl" role="radiogroup" aria-label={t("settings.strength")} style={{ border: "1px solid #e7e5e4" }}>
             {STRENGTHS.map((level) => {
               const selected = theme.strength === level;
               const label = level === "damped" ? t("settings.strengthDamped") : level === "strong" ? t("settings.strengthStrong") : t("settings.strengthStandard");
@@ -366,33 +476,28 @@ export default function SettingsPage() {
                   role="radio"
                   aria-checked={selected}
                   onClick={() => setBrandColor(applyStrength(theme.base, level))}
-                  className="rounded-xl border-2 px-4 text-base font-semibold"
-                  style={{
-                    minHeight: "48px",
-                    borderColor: selected ? theme.brand : "var(--border)",
-                    backgroundColor: selected ? theme.tint : "#fff",
-                    color: "#1c1917",
-                  }}
+                  className="text-base font-semibold"
+                  style={{ minHeight: "56px", background: selected ? INK_DARK : INK_LIGHT, color: selected ? INK_LIGHT : INK_DARK, border: "none" }}
                 >
                   {label}
                 </button>
               );
             })}
           </div>
-        </section>
+          <div className="mt-4 overflow-hidden rounded-xl" style={{ border: "1px solid #e7e5e4" }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ background: theme.brand, color: theme.onBrand }}>
+              <span className="text-base font-bold">{businessName || t("settings.businessName")}</span>
+              <span style={{ fontFamily: mono.style.fontFamily, fontWeight: 700, fontSize: "22px" }}>{t("nav.receipt")} #{previewNumber}</span>
+            </div>
+            <div className="flex justify-between px-4 py-3 text-base">
+              <span>Kavaj</span>
+              <span style={{ fontFamily: mono.style.fontFamily, fontWeight: 700 }}>1</span>
+            </div>
+          </div>
+        </Card>
 
-        <section>
-          <label
-            htmlFor="use-prices"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-              minHeight: "48px",
-              cursor: "pointer",
-              color: "#1c1917",
-            }}
-          >
+        <Card label={t("settings.prices")}>
+          <label htmlFor="use-prices" className="flex items-start gap-3" style={{ minHeight: "56px", cursor: "pointer" }}>
             <input
               id="use-prices"
               type="checkbox"
@@ -400,19 +505,17 @@ export default function SettingsPage() {
               aria-checked={usePrices}
               checked={usePrices}
               onChange={(e) => setUsePrices(e.target.checked)}
-              style={{ width: "44px", height: "44px", accentColor: "#14532d", flexShrink: 0 }}
+              style={{ width: "28px", height: "28px", marginTop: "2px", accentColor: theme.brand, flexShrink: 0 }}
             />
             <span>
-              <span style={{ display: "block", fontWeight: 700 }}>{t("settings.usePrices")}</span>
-              <span style={{ display: "block", fontSize: "0.875rem", color: "#44403c" }}>
-                {t("settings.usePricesHint")}
-              </span>
+              <span className="block text-base font-bold">{t("settings.usePrices")}</span>
+              <span className="mt-1 block text-base" style={{ color: "#44403c" }}>{t("settings.usePricesHint")}</span>
             </span>
           </label>
-        </section>
+        </Card>
 
         <ItemListEditor
-          title={t("settings.priceList")}
+          title={t("settings.garments")}
           list={garmentList}
           setList={setGarmentList}
           addLabel={t("settings.addGarment")}
@@ -437,26 +540,81 @@ export default function SettingsPage() {
           onPriceChange={setPrice}
         />
 
-      {/* Legal */}
-      <section className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
-        <h2
-          className="mb-3 text-sm font-semibold uppercase tracking-wider"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Legal
-        </h2>
-        <div className="flex gap-4">
-          <Link href="/privacy" className="text-sm font-medium underline" style={{ color: "var(--text-muted)" }}>
-            Privacy Policy
-          </Link>
-          <Link href="/terms" className="text-sm font-medium underline" style={{ color: "var(--text-muted)" }}>
-            Terms of Service
-          </Link>
+        <Link href="/subscribe" className="block rounded-2xl bg-white p-4" style={{ border: "1px solid #e7e5e4", color: "#1c1917" }}>
+          <span className="block text-base font-bold">{t("settings.subscription")}</span>
+          <span className="mt-1 block text-base" style={{ color: "#44403c" }}>{subscriptionLine}</span>
+        </Link>
+        <div className="flex gap-4 pb-8">
+          <Link href="/privacy" className="text-base underline" style={{ color: "#44403c" }}>Privacy Policy</Link>
+          <Link href="/terms" className="text-base underline" style={{ color: "#44403c" }}>Terms of Service</Link>
         </div>
-      </section>
+      </main>
+      {pendingLeave && (
+        <div
+          role="presentation"
+          onClick={() => setPendingLeave(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 40, background: `${INK_DARK}73`, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-title"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full rounded-2xl p-5"
+            style={{ maxWidth: "410px", background: INK_LIGHT, color: INK_DARK }}
+          >
+            <h2 id="unsaved-title" className="text-2xl font-bold" style={{ fontFamily: jost.style.fontFamily }}>{t("settings.unsavedTitle")}</h2>
+            <div className="mt-5 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  void persistChanges().then((ok) => {
+                    if (!ok || !pendingLeave) return;
+                    const action = pendingLeave;
+                    setPendingLeave(null);
+                    follow(action);
+                  });
+                }}
+                className="rounded-xl text-base font-bold disabled:opacity-50"
+                style={{ background: theme.brand, color: theme.onBrand, minHeight: "56px" }}
+              >
+                {saving ? t("settings.saving") : t("settings.save")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingLeave;
+                  setPendingLeave(null);
+                  follow(action);
+                }}
+                className="rounded-xl bg-white text-base"
+                style={{ border: `2px solid ${INK_DARK}`, color: INK_DARK, minHeight: "56px" }}
+              >
+                {t("settings.leaveWithoutSaving")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingLeave(null)}
+                className="rounded-xl bg-white text-base font-semibold"
+                style={{ border: `2px solid ${QUIET_GREY}`, color: INK_DARK, minHeight: "56px" }}
+              >
+                {t("settings.stay")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-    </main>
-  </div>
+function Card({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl bg-white p-4" style={{ border: "1px solid #e7e5e4" }}>
+      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: "#78716c" }}>{label}</h2>
+      {children}
+    </section>
   );
 }
    

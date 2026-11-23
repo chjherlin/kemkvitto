@@ -57,18 +57,6 @@ export default function GarmentGrid({
   // Slightly tint inactive tiles so the brand color shows even when window is focused
   const inactiveBg = `color-mix(in srgb, ${brandColor} 4%, white)`;
   const activeBg = `color-mix(in srgb, ${brandColor} 14%, white)`;
-  const cornerBtnBase: React.CSSProperties = {
-    position: "absolute",
-    zIndex: 2,
-    border: "none",
-    borderRadius: "0.3rem",
-    fontSize: "0.625rem",
-    fontWeight: 800,
-    lineHeight: 1,
-    padding: "0.2rem 0.3rem",
-    cursor: "pointer",
-    pointerEvents: "auto",
-  };
 
   return (
     <div className="pos-garment-grid-flat">
@@ -77,7 +65,6 @@ export default function GarmentGrid({
         const active = !!entry && entry.qty > 0;
         const price = priceList[name] ?? 0;
         const isAnimating = lastTapped === name;
-        const hasQuickAdd = name === "Skjorta";
 
         return (
           <div
@@ -114,7 +101,7 @@ export default function GarmentGrid({
                 border: "none",
                 cursor: "pointer",
                 color: "inherit",
-                padding: hasQuickAdd ? "0.375rem 1.75rem 0.375rem 0.375rem" : "0.375rem",
+                padding: "0.375rem",
               }}
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
@@ -137,44 +124,6 @@ export default function GarmentGrid({
               >
                 ×{entry.qty}
               </span>
-            )}
-
-            {/* +5 / +10 corner buttons — Skjorta only */}
-            {hasQuickAdd && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); addQty(name, 5); }}
-                  title="Add 5"
-                  style={{
-                    ...cornerBtnBase,
-                    top: "0.3rem",
-                    right: "0.3rem",
-                    backgroundColor: active
-                      ? `color-mix(in srgb, ${brandColor} 20%, white)`
-                      : "rgba(0,0,0,0.06)",
-                    color: active ? brandColor : "var(--text-light)",
-                  }}
-                >
-                  +5
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); addQty(name, 10); }}
-                  title="Add 10"
-                  style={{
-                    ...cornerBtnBase,
-                    bottom: "0.3rem",
-                    right: "0.3rem",
-                    backgroundColor: active
-                      ? `color-mix(in srgb, ${brandColor} 20%, white)`
-                      : "rgba(0,0,0,0.06)",
-                    color: active ? brandColor : "var(--text-light)",
-                  }}
-                >
-                  +10
-                </button>
-              </>
             )}
           </div>
         );
