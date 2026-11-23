@@ -5,6 +5,7 @@ interface Row {
   brand_color?: string;
   price_list?: Record<string, number>;
   locale?: string | null;
+  country_code?: string | null;
 }
 
 /** Loads the fields an email needs. Locale is optional until that column exists. */
@@ -16,7 +17,7 @@ export async function loadMailWasher(
 ): Promise<WasherInfo | undefined> {
   const full = await supabase
     .from("washers")
-    .select("business_name, brand_color, price_list, locale")
+    .select("business_name, brand_color, price_list, locale, country_code")
     .eq("id", washerId)
     .single();
 
@@ -35,5 +36,6 @@ export async function loadMailWasher(
     brand_color: row.brand_color || "",
     price_list: row.price_list || {},
     locale: row.locale ?? null,
+    country_code: row.country_code ?? null,
   };
 }

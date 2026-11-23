@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReminderEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
-import { isPromisedDatePast, utcTodayISO } from "@/lib/reminder-list";
+import { isPromisedDatePast, calendarDate } from "@/lib/reminder-list";
+import { timezoneForCountry } from "@/lib/country-timezone";
 
 function missingColumn(code: string | undefined): boolean {
   return code === "42703" || code === "PGRST204";
@@ -34,15 +35,15 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!isPromisedDatePast(receipt.delivery_date, utcTodayISO())) {
-    return NextResponse.json({ error: "Promised date has not passed" }, { status: 400 });
-  }
-
   if (!receipt.customer_email) {
     return NextResponse.json({ error: "No customer email" }, { status: 400 });
   }
 
   const washer = await loadMailWasher(supabase, washerId);
+  const today = calendarDate(new Date(), timezoneForCountry(washer?.country_code));
+  if (!isPromisedDatePast(receipt.delivery_date, today)) {
+    return NextResponse.json({ error: "Promised date has not passed" }, { status: 400 });
+  }
 
   try {
     await sendReminderEmail(receipt, washer);
