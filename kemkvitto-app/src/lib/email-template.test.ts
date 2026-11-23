@@ -56,6 +56,11 @@ test("the header uses the brand colour, not the darker bar", () => {
   assert.match(html, /Borde vara klar/);
   assert.match(html, /font-size:28px/);
   assert.match(html, /#0042/);
+  assert.equal(html.includes("moms"), false);
+  assert.match(html, /200 kr/);
+  const pounds = renderMailHtml(sample("receipt", { formatMoney: (amount) => `£${amount.toFixed(2)}` }));
+  assert.match(pounds, /£200\.00/);
+  assert.equal(pounds.includes(" kr"), false);
   assert.match(html, /kemkvitto-logo-dark\.png/);
   assert.equal(html.includes("border-radius:8px"), false);
 });

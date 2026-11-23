@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { isSoldCountry } from "@/lib/pricing";
 import { normalizeLocale } from "@/lib/subscription-notices";
 import { canonicalBrandHex } from "@/lib/brand";
-import { DEFAULT_GARMENTS, DEFAULT_PRICE_LIST, DEFAULT_SERVICES } from "@/lib/laundry-defaults";
+import { DEFAULT_GARMENTS, DEFAULT_SERVICES, examplePrices } from "@/lib/laundry-defaults";
 
 export async function POST(request: Request) {
   const { email, password, businessName, countryCode, locale, brandColor } = await request.json();
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     email,
     password_hash: passwordHash,
     business_name: businessName,
-    price_list: DEFAULT_PRICE_LIST,
+    price_list: examplePrices(countryCode),
   };
   const withCountry = {
     ...baseRow,

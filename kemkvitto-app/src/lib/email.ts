@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { formatLaundryMoney } from "./laundry-defaults";
 import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, tint } from "./brand";
@@ -103,6 +104,7 @@ function render(
     services: receipt.services,
     theme: mailTheme(washer?.brand_color || DEFAULT_BRAND),
     logoSrc: mailLogoUrl(),
+    formatMoney: (amount) => formatLaundryMoney(amount, washer?.country_code),
   };
   return { subject: mailSubject(input), html: renderMailHtml(input) };
 }

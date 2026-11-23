@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import { onBrand } from "@/lib/brand";
+import { formatLaundryMoney } from "@/lib/laundry-defaults";
 
 export interface GarmentEntry {
   qty: number;
@@ -15,6 +16,7 @@ interface GarmentGridProps {
   brandColor: string;
   garmentList: string[];
   showPrices?: boolean;
+  countryCode?: string | null;
 }
 
 export default function GarmentGrid({
@@ -24,6 +26,7 @@ export default function GarmentGrid({
   brandColor,
   garmentList,
   showPrices = true,
+  countryCode = null,
 }: GarmentGridProps) {
   const { tGarment } = useI18n();
   const [lastTapped, setLastTapped] = useState<string | null>(null);
@@ -107,7 +110,7 @@ export default function GarmentGrid({
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
               {showPrices && price > 0 && (
-                <span className="pos-tile-price">{price} kr</span>
+                <span className="pos-tile-price">{formatLaundryMoney(price, countryCode)}</span>
               )}
             </button>
 

@@ -1,9 +1,9 @@
 -- Proposal only. Do not run until Kimmen approves.
 --
--- The old product page had no stored package price. +5 and +10 added that
--- many shirts at the single Skjorta price. This gives existing laundries the
--- two new products and, only when a price is missing, sets it to 5 or 10
--- times that laundry's current Skjorta price. They can change it in Settings.
+-- Does not convert existing prices into another currency. A laundry keeps
+-- the numbers it already stored and only the currency sign changes in the app.
+-- This only fills missing shirt-package prices, using the Swedish ratio
+-- (150/80 and 250/80, about 1.9 and 3.1) rounded to the nearest 5.
 -- Rows with garment_list NULL already receive the new default list from code.
 
 UPDATE washers
@@ -12,14 +12,14 @@ SET price_list = price_list
        WHEN price_list ? '5 Skjortor' THEN '{}'::jsonb
        ELSE jsonb_build_object(
          '5 Skjortor',
-         COALESCE((price_list->>'Skjorta')::numeric, 0) * 5
+         ROUND(COALESCE((price_list->>'Skjorta')::numeric, 0) * 1.875 / 5) * 5
        )
      END
   || CASE
        WHEN price_list ? '10 Skjortor' THEN '{}'::jsonb
        ELSE jsonb_build_object(
          '10 Skjortor',
-         COALESCE((price_list->>'Skjorta')::numeric, 0) * 10
+         ROUND(COALESCE((price_list->>'Skjorta')::numeric, 0) * 3.125 / 5) * 5
        )
      END
 WHERE price_list IS NOT NULL;

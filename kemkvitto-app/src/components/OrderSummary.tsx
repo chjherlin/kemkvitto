@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
+import { formatLaundryMoney } from "@/lib/laundry-defaults";
 
 export interface OrderItem {
   garment: string;
@@ -22,6 +23,7 @@ interface OrderSummaryProps {
   onQtyChange: (garment: string, qty: number) => void;
   serviceLines?: ServiceLine[];
   showPrices?: boolean;
+  countryCode?: string | null;
 }
 
 export default function OrderSummary({
@@ -32,6 +34,7 @@ export default function OrderSummary({
   onQtyChange,
   serviceLines,
   showPrices = true,
+  countryCode = null,
 }: OrderSummaryProps) {
   const { t, tGarment } = useI18n();
 
@@ -83,7 +86,7 @@ export default function OrderSummary({
             <div className="pos-order-line-right">
               {showPrices && (
                 <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)", minWidth: "3.5rem", textAlign: "right" }}>
-                  {lineTotal > 0 ? `${lineTotal} kr` : "—"}
+                  {lineTotal > 0 ? formatLaundryMoney(lineTotal, countryCode) : "—"}
                 </span>
               )}
               <button
@@ -109,7 +112,7 @@ export default function OrderSummary({
               </span>
               {showPrices && (
                 <span className="font-receipt text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-                  {svc.price > 0 ? `${svc.price} kr` : "—"}
+                  {svc.price > 0 ? formatLaundryMoney(svc.price, countryCode) : "—"}
                 </span>
               )}
             </div>
@@ -123,7 +126,7 @@ export default function OrderSummary({
           <div className="pos-order-line">
             <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-light)" }}>{t("order.total")}</span>
             <span className="font-receipt text-lg font-bold" style={{ color: brandColor }}>
-              {total} kr
+              {formatLaundryMoney(total, countryCode)}
             </span>
           </div>
         </div>

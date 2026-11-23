@@ -37,6 +37,8 @@ export interface RenderMailInput {
   services?: string[] | null;
   theme: MailTheme;
   logoSrc: string;
+  /** Supplied by the sender from the shared laundry currency table. */
+  formatMoney?: (amount: number) => string;
 }
 
 interface Copy {
@@ -204,8 +206,10 @@ export function escapeHtml(value: string | null | undefined): string {
 
 const MONO = "'JetBrains Mono', 'Courier New', monospace";
 
-function money(amount: number): string {
-  return `${amount} kr`;
+function money(amount: number, format?: (amount: number) => string): string {
+  if (format) return format(amount);
+  const text = Number.isInteger(amount) ? String(amount) : amount.toFixed(2).replace(".", ",");
+  return `${text} kr`;
 }
 
 export function mailSubject(input: RenderMailInput): string {
@@ -251,8 +255,8 @@ export function renderMailHtml(input: RenderMailInput): string {
   const rows = input.lines.map((line) => {
     const lineTotal = line.qty * line.unitPrice;
     const priceCells = input.showPrices
-      ? `<td style="padding:8px 0;text-align:right;color:${theme.muted};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(line.unitPrice))}</td>
-         <td style="padding:8px 0;text-align:right;color:${theme.ink};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(lineTotal))}</td>`
+      ? `<td style="padding:8px 0;text-align:right;color:${theme.muted};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(line.unitPrice, input.formatMoney))}</td>
+         <td style="padding:8px 0;text-align:right;color:${theme.ink};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(lineTotal, input.formatMoney))}</td>`
       : "";
     return `<tr>
       <td style="padding:8px 0;color:${theme.ink};font-size:16px;">${escapeHtml(line.name)}</td>
@@ -269,7 +273,7 @@ export function renderMailHtml(input: RenderMailInput): string {
         <table width="100%" cellpadding="0" cellspacing="0" style="border-top:2px solid ${theme.footer};">
           <tr>
             <td style="padding-top:14px;color:${theme.ink};font-size:16px;font-weight:700;">${escapeHtml(copy.total)}</td>
-            <td style="padding-top:14px;text-align:right;color:${theme.ink};font-size:30px;font-family:${MONO};font-weight:700;letter-spacing:0.04em;">${escapeHtml(money(input.total))}</td>
+            <td style="padding-top:14px;text-align:right;color:${theme.ink};font-size:30px;font-family:${MONO};font-weight:700;letter-spacing:0.04em;">${escapeHtml(money(input.total, input.formatMoney))}</td>
           </tr>
         </table>
       </td></tr>`

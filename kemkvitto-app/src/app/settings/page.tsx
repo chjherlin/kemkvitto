@@ -11,6 +11,7 @@ import AppMenu from "@/components/AppMenu";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
+import { currencyAffix } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 import { cloneSettings, settingsAreDirty, type SettingsSnapshot } from "@/lib/settings-dirty";
 
@@ -29,6 +30,7 @@ function ItemListEditor({
   addLabel,
   priceList,
   showPrices,
+  countryCode = null,
   onRename,
   onRemove,
   onAdd,
@@ -41,11 +43,13 @@ function ItemListEditor({
   addLabel: string;
   priceList: Record<string, number>;
   showPrices: boolean;
+  countryCode?: string | null;
   onRename: (idx: number, newName: string) => void;
   onRemove: (idx: number) => void;
   onAdd: () => void;
   onPriceChange: (item: string, value: string) => void;
 }) {
+  const money = currencyAffix(countryCode);
   return (
     <section>
       <h2
@@ -71,6 +75,9 @@ function ItemListEditor({
             />
             {showPrices && (
               <>
+                {money.position === "before" && (
+                  <span className="font-receipt text-base font-bold" style={{ color: "var(--text-light)" }}>{money.symbol}</span>
+                )}
                 <input
                   type="number"
                   min={0}
@@ -78,11 +85,14 @@ function ItemListEditor({
                   value={item ? (priceList[item] || "") : ""}
                   onChange={(e) => onPriceChange(item, e.target.value)}
                   disabled={!item}
+                  step="any"
                   className="w-24 rounded-lg border bg-white px-2 text-right text-base"
                   style={{ borderColor: "#e7e5e4", fontFamily: mono.style.fontFamily, fontWeight: 700, minHeight: "48px", color: "#1c1917" }}
-                  aria-label={`${item} kr`}
+                  aria-label={item}
                 />
-                <span className="text-base" style={{ color: "#44403c" }}>kr</span>
+                {money.position === "after" && (
+                  <span className="text-base" style={{ color: "#44403c", fontFamily: mono.style.fontFamily, fontWeight: 700 }}>{money.symbol}</span>
+                )}
               </>
             )}
             <button
@@ -124,6 +134,7 @@ export default function SettingsPage() {
   const [resetDone, setResetDone] = useState(false);
   const [garmentList, setGarmentList] = useState<string[]>([]);
   const [serviceList, setServiceList] = useState<string[]>([]);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [baseline, setBaseline] = useState<SettingsSnapshot | null>(null);
   const [pendingLeave, setPendingLeave] = useState<LeaveAction | null>(null);
@@ -146,6 +157,7 @@ export default function SettingsPage() {
         setServiceList(data.serviceList || []);
         const loadedNumber = formatReceiptNumber(data.nextReceiptNumber ?? 1);
         setResetNumber(loadedNumber);
+        setCountryCode(data.countryCode ?? null);
         setBaseline(cloneSettings({
           brandColor: data.brandColor || DEFAULT_BRAND,
           businessName: data.businessName || "",
@@ -295,7 +307,7 @@ export default function SettingsPage() {
   }
 
   function setPrice(garment: string, value: string) {
-    const num = parseInt(value);
+    const num = parseFloat(value);
     const next = { ...priceList };
     if (!num || num <= 0) {
       delete next[garment];
@@ -528,6 +540,7 @@ export default function SettingsPage() {
           addLabel={t("settings.addGarment")}
           priceList={priceList}
           showPrices={usePrices}
+          countryCode={countryCode}
           onRename={(idx, name) => renameItem(garmentList, setGarmentList, idx, name)}
           onRemove={(idx) => removeItem(garmentList, setGarmentList, idx)}
           onAdd={() => addItem(garmentList, setGarmentList)}
@@ -541,6 +554,7 @@ export default function SettingsPage() {
           addLabel={t("settings.addService")}
           priceList={priceList}
           showPrices={usePrices}
+          countryCode={countryCode}
           onRename={(idx, name) => renameItem(serviceList, setServiceList, idx, name)}
           onRemove={(idx) => removeItem(serviceList, setServiceList, idx)}
           onAdd={() => addItem(serviceList, setServiceList)}

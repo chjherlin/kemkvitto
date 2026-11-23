@@ -16,7 +16,7 @@ export async function GET() {
 
   let { data, error } = await supabase
     .from("washers")
-    .select("next_receipt_number, brand_color, price_list, garment_list, service_list, business_name")
+    .select("next_receipt_number, brand_color, price_list, garment_list, service_list, business_name, country_code")
     .eq("id", washerId)
     .single();
 
@@ -36,6 +36,7 @@ export async function GET() {
     brandColor: d?.brand_color ?? DEFAULT_BRAND,
     priceList: d?.price_list ?? {},
     businessName: d?.business_name ?? "",
+    countryCode: (d?.country_code as string | null) ?? null,
     garmentList: visibleGarments(d?.garment_list as string[] | null),
     serviceList: (d?.service_list as string[] | null) ?? DEFAULT_SERVICES,
   });
