@@ -10,7 +10,7 @@ import WideNav from "@/components/WideNav";
 import { useI18n } from "@/lib/i18n";
 import { SHOW_PRICES_KEY, pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
-import { currencyAffix } from "@/lib/laundry-defaults";
+import { currencyAffix, isUnpricedGarment } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, STRENGTHS, applyStrength, brandTheme, type Strength } from "@/lib/brand";
 import { cloneSettings, settingsAreDirty, type SettingsSnapshot } from "@/lib/settings-dirty";
 import { figtree, jost, mono } from "@/lib/fonts";
@@ -69,7 +69,7 @@ function ItemListEditor({
               className="flex-1 bg-transparent text-base font-bold focus:outline-none"
               style={{ color: "#1c1917", minHeight: "56px" }}
             />
-            {showPrices && (
+            {showPrices && !isUnpricedGarment(item) && (
               <>
                 {money.position === "before" && (
                   <span className="font-receipt text-base font-bold" style={{ color: "var(--text-light)" }}>{money.symbol}</span>
@@ -149,7 +149,8 @@ export default function SettingsPage() {
         setBrandColor(data.brandColor || DEFAULT_BRAND);
         setPriceList(data.priceList || {});
         setBusinessName(data.businessName || "");
-        setGarmentList(data.garmentList || []);
+        const loadedGarments = (data.garmentList || []).filter((name: string) => !isUnpricedGarment(name));
+        setGarmentList(loadedGarments);
         setServiceList(data.serviceList || []);
         const loadedNumber = formatReceiptNumber(data.nextReceiptNumber ?? 1);
         setResetNumber(loadedNumber);
@@ -158,7 +159,7 @@ export default function SettingsPage() {
           brandColor: data.brandColor || DEFAULT_BRAND,
           businessName: data.businessName || "",
           priceList: data.priceList || {},
-          garmentList: data.garmentList || [],
+          garmentList: loadedGarments,
           serviceList: data.serviceList || [],
           receiptNumber: loadedNumber,
         }));

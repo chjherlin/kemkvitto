@@ -220,7 +220,7 @@ const translations = {
   "subscribe.trialing": { sv: "Provperioden är igång.", en: "Your trial is active.", da: "Prøveperioden er i gang.", no: "Prøveperioden er i gang." },
 
   // Customer search
-  "customer.searchPlaceholder": { sv: "Sök kundnamn...", en: "Search customer name...", da: "Søg kundenavn...", no: "Søk kundenavn..." },
+  "customer.searchPlaceholder": { sv: "Sök kund (e-post)", en: "Search customer (email)", da: "Søg kunde (e-mail)", no: "Søk kunde (e-post)" },
   "customer.phone": { sv: "Telefon", en: "Phone", da: "Telefon", no: "Telefon" },
   "customer.email": { sv: "E-post", en: "Email", da: "E-mail", no: "E-post" },
   "customer.newCustomer": { sv: "Ny kund", en: "New customer", da: "Ny kunde", no: "Ny kunde" },
@@ -355,6 +355,7 @@ const garmentNames: Record<string, Record<Locale, string>> = {
   "Jumper": { sv: "Jumper", en: "Jumper", da: "Jumper", no: "Jumper" },
   "Gardin": { sv: "Gardin", en: "Curtain", da: "Gardin", no: "Gardin" },
   "Vittvätt": { sv: "Vittvätt", en: "Whites", da: "Hvidvask", no: "Hvitvask" },
+  "Annat/Special": { sv: "Annat/Special", en: "Other/Special", da: "Andet/Special", no: "Annet/Special" },
 
 };
 

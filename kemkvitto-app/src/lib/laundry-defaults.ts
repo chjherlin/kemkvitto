@@ -71,9 +71,9 @@ export const ECB_REFERENCE = {
 
 const SWEDISH_PRICES: Record<string, number> = {
   "Rock": 250, "Kostym": 350, "Kavaj": 200, "Byxor": 150, "Kappa": 350,
-  "Dräkt": 300, "Jacka": 250, "Kjol": 150, "Poplin": 100, "Matta": 400,
+  "Dräkt": 300, "Jacka": 250, "Kjol": 150, "Matta": 400,
   "Klänning": 250, "Blus": 130, "Skjorta": 80, "5 Skjortor": 150, "10 Skjortor": 250,
-  "Mocka": 500, "Slips": 80, "Jumper": 130, "Gardin": 200, "Vittvätt": 100,
+  "Mocka": 500, "Slips": 80, "Gardin": 200, "Vittvätt": 100,
   "Pressning": 50, "Stärkning": 30, "Vikning": 20, "Express": 100,
 };
 
@@ -204,9 +204,25 @@ export function formatLaundryMoney(amount: number, countryCode: string | null | 
 
 export const DEFAULT_GARMENTS = [
   "Rock", "Kostym", "Kavaj", "Byxor", "Kappa", "Dräkt", "Jacka", "Kjol",
-  "Poplin", "Matta", "Klänning", "Blus", "Skjorta", "5 Skjortor", "10 Skjortor",
-  "Mocka", "Slips", "Jumper", "Gardin", "Vittvätt",
+  "Matta", "Klänning", "Blus", "Skjorta", "5 Skjortor", "10 Skjortor",
+  "Mocka", "Slips", "Gardin", "Vittvätt",
 ];
+
+/** Always appended by `visibleGarments`. Not stored on the laundry's own list. */
+export const SPECIAL_GARMENT = "Annat/Special";
+
+export function isUnpricedGarment(name: string): boolean {
+  return name === SPECIAL_GARMENT;
+}
+
+/** Annat/Special is never priced, even if a list still has a number for it. */
+export function garmentUnitPrice(
+  name: string,
+  priceList: Record<string, number> | null | undefined
+): number {
+  if (isUnpricedGarment(name)) return 0;
+  return priceList?.[name] ?? 0;
+}
 
 export const DEFAULT_SERVICES = ["Pressning", "Stärkning", "Vikning", "Express"];
 
@@ -221,5 +237,6 @@ const HIDDEN_GARMENTS = new Set(["Skjorta ×5", "Skjorta ×10"]);
 
 export function visibleGarments(list: string[] | null | undefined): string[] {
   const source = list ?? DEFAULT_GARMENTS;
-  return source.filter((name) => !HIDDEN_GARMENTS.has(name));
+  const body = source.filter((name) => !HIDDEN_GARMENTS.has(name) && name !== SPECIAL_GARMENT);
+  return [...body, SPECIAL_GARMENT];
 }
