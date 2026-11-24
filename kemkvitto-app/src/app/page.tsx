@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,8 @@ import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 import { DEFAULT_BRAND, brandTheme } from "@/lib/brand";
-import { formatLaundryMoney } from "@/lib/laundry-defaults";
+import { formatLaundryMoney, garmentUnitPrice } from "@/lib/laundry-defaults";
+import { jost } from "@/lib/fonts";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -38,12 +39,11 @@ export default function NewReceiptPage() {
   const [dropOffDate, setDropOffDate] = useState(todayISO());
   const [deliveryDate, setDeliveryDate] = useState(getDefaultDeliveryDate());
   const [comment, setComment] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [successInfo, setSuccessInfo] = useState<{ receiptNum: string | number; emailSent: boolean; customerName: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ receiptNum: string | number; emailSent: boolean; emailAttempted: boolean; email: string } | null>(null);
+  const resetRef = useRef<() => void>(() => {});
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [priceList, setPriceList] = useState<Record<string, number>>({});
@@ -78,6 +78,13 @@ export default function NewReceiptPage() {
   }, [status]);
 
   useEffect(() => {
+    if (!successInfo) return;
+    if (successInfo.emailAttempted && !successInfo.emailSent) return;
+    const timer = window.setTimeout(() => resetRef.current(), 2000);
+    return () => window.clearTimeout(timer);
+  }, [successInfo]);
+
+  useEffect(() => {
     if (!showReceiptHelp) return;
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") setShowReceiptHelp(false);
@@ -90,7 +97,7 @@ export default function NewReceiptPage() {
   const orderItems: OrderItem[] = Object.entries(garments).map(([name, entry]) => ({
     garment: name,
     qty: entry.qty,
-    unitPrice: priceList[name] ?? 0,
+    unitPrice: garmentUnitPrice(name, priceList),
   }));
 
   const garmentCount = orderItems.reduce((s, i) => s + i.qty, 0);
@@ -148,8 +155,8 @@ export default function NewReceiptPage() {
           deliveryDate,
           dropOffDate,
           comment,
-          customerName,
-          customerPhone,
+          customerName: null,
+          customerPhone: null,
           customerEmail,
           amountTotal: grandTotal * 100,
           services,
@@ -168,7 +175,12 @@ export default function NewReceiptPage() {
         setReceiptNumber(nextReceiptNumber);
         setNumberDraft(formatReceiptNumber(nextReceiptNumber));
       }
-      setSuccessInfo({ receiptNum: effectiveReceiptNumber, emailSent, customerName });
+      setSuccessInfo({
+        receiptNum: effectiveReceiptNumber,
+        emailSent: Boolean(emailSent),
+        emailAttempted: customerEmail.trim().length > 0,
+        email: customerEmail.trim(),
+      });
     } catch (err) {
       setSubmitError(`Nätverksfel: ${err instanceof Error ? err.message : "okänt"}`);
       setSubmitting(false);
@@ -194,15 +206,22 @@ export default function NewReceiptPage() {
     setDropOffDate(todayISO());
     setDeliveryDate(getDefaultDeliveryDate());
     setComment("");
-    setCustomerName("");
-    setCustomerPhone("");
     setCustomerEmail("");
     setSubmitting(false);
     setSubmitError("");
     setSuccessInfo(null);
     setSpecialMode(false);
     setSpecialNumber("");
+    fetch("/api/receipts/next-number")
+      .then((response) => response.json())
+      .then((data) => {
+        const next = data.nextReceiptNumber ?? 1;
+        setReceiptNumber(next);
+        setNumberDraft(formatReceiptNumber(next));
+      })
+      .catch(() => {});
   }
+  resetRef.current = resetForm;
 
   if (!session) return null;
 
@@ -213,7 +232,7 @@ export default function NewReceiptPage() {
         className="flex min-h-screen flex-col items-center justify-center px-6"
         style={{ background: theme.tint }}
       >
-        <div className="animate-fade-up text-center" style={{ maxWidth: "28rem" }}>
+        <div className="animate-fade-up text-center" style={{ width: "100%", maxWidth: "28rem" }}>
           <div
             className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full text-4xl"
             style={{ backgroundColor: theme.brand, color: theme.onBrand }}
@@ -222,13 +241,13 @@ export default function NewReceiptPage() {
           </div>
           <h1
             className="mb-2 text-3xl font-bold"
-            style={{ fontFamily: "'Syne', sans-serif", color: "var(--text)" }}
+            style={{ fontFamily: jost.style.fontFamily, color: "var(--text)", overflowWrap: "anywhere" }}
           >
             {t("order.successTitle")}
           </h1>
-          <p className="mb-1 text-lg" style={{ color: "var(--text-muted)" }}>
+          <p className="mb-1 text-lg" style={{ color: "var(--text-muted)", overflowWrap: "anywhere" }}>
             #{successInfo.receiptNum}
-            {successInfo.customerName && ` — ${successInfo.customerName}`}
+            {successInfo.email && ` — ${successInfo.email}`}
           </p>
           <p className="mb-8 text-base" style={{ color: successInfo.emailSent ? brandColor : "var(--text-light)" }}>
             {successInfo.emailSent ? t("order.successEmailSent") : t("order.successNoEmail")}
@@ -480,16 +499,7 @@ export default function NewReceiptPage() {
             <div>
               <div className="pos-section-label">{t("receipt.customer")}</div>
               <CustomerSearch
-                name={customerName}
-                phone={customerPhone}
                 email={customerEmail}
-                onSelect={(c) => {
-                  setCustomerName(c.name);
-                  setCustomerPhone(c.phone);
-                  setCustomerEmail(c.email);
-                }}
-                onNameChange={setCustomerName}
-                onPhoneChange={setCustomerPhone}
                 onEmailChange={setCustomerEmail}
               />
             </div>
@@ -538,7 +548,7 @@ export default function NewReceiptPage() {
           brandColor={brandColor}
           submitting={submitting}
           disabled={submitting || garmentCount === 0 || !deliveryDate}
-          customerName={customerName}
+          customerName={customerEmail}
           customerEmail={customerEmail}
           countryCode={countryCode}
           onSubmit={handleSubmit}

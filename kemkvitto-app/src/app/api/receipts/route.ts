@@ -5,6 +5,8 @@ import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
 import { buildReceiptInsert } from "@/lib/receipt-insert";
+import { normalizeCustomerEmail } from "@/lib/customer-email";
+import { saveCustomerByEmail } from "@/app/api/customers/route";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
 export async function POST(request: Request) {
@@ -69,23 +71,9 @@ export async function POST(request: Request) {
     .update({ next_receipt_number: storedNext })
     .eq("id", washerId);
 
-  // Upsert customer record if name provided
-  if (customerName) {
-    await supabase
-      .from("customers")
-      .upsert(
-        {
-          washer_id: washerId,
-          name: customerName,
-          phone: customerPhone || "",
-          email: customerEmail || "",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "washer_id,name" }
-      )
-      .then(({ error: custErr }) => {
-        if (custErr) console.error("Customer upsert error:", custErr.code, custErr.message);
-      });
+  const normalizedEmail = normalizeCustomerEmail(customerEmail);
+  if (normalizedEmail) {
+    await saveCustomerByEmail(supabase, washerId, normalizedEmail);
   }
 
   // If customer email provided, send receipt email immediately

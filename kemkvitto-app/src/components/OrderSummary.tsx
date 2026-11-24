@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { formatLaundryMoney } from "@/lib/laundry-defaults";
+import { formatLaundryMoney, isUnpricedGarment } from "@/lib/laundry-defaults";
 
 export interface OrderItem {
   garment: string;
@@ -52,6 +52,7 @@ export default function OrderSummary({
     <div className="pos-order-list">
       {items.map((item) => {
         const lineTotal = item.unitPrice * item.qty;
+        const showLinePrice = showPrices && !isUnpricedGarment(item.garment) && lineTotal > 0;
         return (
           <div key={item.garment} className="pos-order-line">
             <div className="pos-order-line-left">
@@ -84,9 +85,9 @@ export default function OrderSummary({
               </span>
             </div>
             <div className="pos-order-line-right">
-              {showPrices && (
+              {showLinePrice && (
                 <span className="font-receipt text-sm font-medium" style={{ color: "var(--text-muted)", minWidth: "3.5rem", textAlign: "right" }}>
-                  {lineTotal > 0 ? formatLaundryMoney(lineTotal, countryCode) : "—"}
+                  {formatLaundryMoney(lineTotal, countryCode)}
                 </span>
               )}
               <button

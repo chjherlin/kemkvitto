@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { onBrand } from "@/lib/brand";
-import { formatLaundryMoney } from "@/lib/laundry-defaults";
+import { formatLaundryMoney, isUnpricedGarment } from "@/lib/laundry-defaults";
 
 export interface GarmentEntry {
   qty: number;
@@ -30,34 +30,23 @@ export default function GarmentGrid({
 }: GarmentGridProps) {
   const { tGarment } = useI18n();
   const [lastTapped, setLastTapped] = useState<string | null>(null);
-  const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const addQty = useCallback((name: string, qty: number) => {
+  const addQty = useCallback((name: string) => {
     setLastTapped(name);
     const next = { ...garments };
-    next[name] = { qty: (next[name]?.qty ?? 0) + qty };
+    next[name] = { qty: (next[name]?.qty ?? 0) + 1 };
     onChange(next);
     setTimeout(() => setLastTapped(null), 150);
   }, [garments, onChange]);
 
-  const startLongPress = useCallback((name: string) => {
-    const timer = setTimeout(() => {
-      const next = { ...garments };
-      delete next[name];
-      onChange(next);
-      setLastTapped(null);
-    }, 500);
-    setLongPressTimer(timer);
+  const removeOne = useCallback((name: string) => {
+    const current = garments[name]?.qty ?? 0;
+    const next = { ...garments };
+    if (current <= 1) delete next[name];
+    else next[name] = { qty: current - 1 };
+    onChange(next);
   }, [garments, onChange]);
 
-  const cancelLongPress = useCallback(() => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  }, [longPressTimer]);
-
-  // Slightly tint inactive tiles so the brand color shows even when window is focused
   const inactiveBg = `color-mix(in srgb, ${brandColor} 4%, white)`;
   const activeBg = `color-mix(in srgb, ${brandColor} 14%, white)`;
 
@@ -66,7 +55,7 @@ export default function GarmentGrid({
       {garmentList.map((name) => {
         const entry = garments[name];
         const active = !!entry && entry.qty > 0;
-        const price = priceList[name] ?? 0;
+        const price = isUnpricedGarment(name) ? 0 : (priceList[name] ?? 0);
         const isAnimating = lastTapped === name;
 
         return (
@@ -83,16 +72,9 @@ export default function GarmentGrid({
               cursor: "default",
             }}
           >
-            {/* Full-tile main tap area */}
             <button
               type="button"
-              onClick={() => addQty(name, 1)}
-              onMouseDown={() => active && startLongPress(name)}
-              onMouseUp={cancelLongPress}
-              onMouseLeave={cancelLongPress}
-              onTouchStart={() => active && startLongPress(name)}
-              onTouchEnd={cancelLongPress}
-              title={active ? "Long-press to remove" : undefined}
+              onClick={() => addQty(name)}
               style={{
                 position: "relative",
                 width: "100%",
@@ -105,29 +87,40 @@ export default function GarmentGrid({
                 border: "none",
                 cursor: "pointer",
                 color: "inherit",
-                padding: "1rem 0.375rem 0.75rem",
+                padding: "1.4rem 0.375rem 0.75rem",
               }}
             >
               <span className="pos-tile-name">{tGarment(name)}</span>
-              {showPrices && price > 0 && (
+              {showPrices && !isUnpricedGarment(name) && price > 0 && (
                 <span className="pos-tile-price">{formatLaundryMoney(price, countryCode)}</span>
               )}
             </button>
 
-            {/* Qty badge — top left */}
             {active && (
               <span
                 className="pos-tile-badge"
                 style={{
                   backgroundColor: brandColor,
                   color: onBrand(brandColor),
-                  top: "0.25rem",
-                  left: "0.25rem",
+                  top: "0.2rem",
+                  left: "0.2rem",
                   right: "auto",
                 }}
               >
                 ×{entry.qty}
               </span>
+            )}
+
+            {active && (
+              <button
+                type="button"
+                className="pos-tile-minus"
+                aria-label="−"
+                onClick={() => removeOne(name)}
+                style={{ color: brandColor }}
+              >
+                −
+              </button>
             )}
           </div>
         );

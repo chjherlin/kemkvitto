@@ -10,7 +10,7 @@ import WideNav from "@/components/WideNav";
 import { useI18n } from "@/lib/i18n";
 import { pricesEnabled } from "@/lib/prices";
 import { compareReceiptNumbersDesc, formatReceiptNumber } from "@/lib/receipt-number";
-import { formatLaundryMoney } from "@/lib/laundry-defaults";
+import { formatLaundryMoney, garmentUnitPrice } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, onBrand } from "@/lib/brand";
 import { formatReminderDate, garmentSummary, isPromisedDatePast, utcTodayISO } from "@/lib/reminder-list";
 import { figtree, jost, mono } from "@/lib/fonts";
@@ -75,7 +75,7 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
   const serviceKeys = ["pressning", "starkning", "vikning", "express"] as const;
   const svcNameMap: Record<string, string> = { pressning: "Pressning", starkning: "Stärkning", vikning: "Vikning", express: "Express" };
 
-  const grandTotal = Object.entries(garments).reduce((sum, [name, qty]) => sum + qty * (priceList[name] ?? 0), 0)
+  const grandTotal = Object.entries(garments).reduce((sum, [name, qty]) => sum + qty * garmentUnitPrice(name, priceList), 0)
     + services.reduce((sum, svc) => sum + (priceList[svcNameMap[svc] ?? ""] ?? 0), 0);
 
   function setQty(name: string, qty: number) {
@@ -505,7 +505,7 @@ export default function ReceiptsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {sorted.map((r) => {
-              const who = (r.customer_name || "").trim() || r.customer_email || "—";
+              const who = (r.customer_email || "").trim() || "—";
               const garments = garmentSummary(r.garments, tGarment);
               const past = isPromisedDatePast(r.delivery_date, today);
               const sentAt = r.reminder_sent_at;

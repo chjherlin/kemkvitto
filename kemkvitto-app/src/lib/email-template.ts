@@ -19,6 +19,8 @@ export interface MailLine {
   name: string;
   qty: number;
   unitPrice: number;
+  /** Annat/Special is quantity only. No "0 kr". */
+  hidePrice?: boolean;
 }
 
 export interface RenderMailInput {
@@ -256,7 +258,7 @@ export function renderMailHtml(input: RenderMailInput): string {
     .filter(Boolean);
   const rows = input.lines.map((line) => {
     const lineTotal = line.qty * line.unitPrice;
-    const priceCells = input.showPrices
+    const priceCells = input.showPrices && !line.hidePrice
       ? `<td style="padding:8px 0;text-align:right;color:${theme.muted};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(line.unitPrice, input.formatMoney))}</td>
          <td style="padding:8px 0;text-align:right;color:${theme.ink};font-size:16px;font-family:${MONO};font-weight:700;">${escapeHtml(money(lineTotal, input.formatMoney))}</td>`
       : "";

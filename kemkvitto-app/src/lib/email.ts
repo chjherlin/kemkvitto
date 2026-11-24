@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { formatLaundryMoney } from "./laundry-defaults";
+import { formatLaundryMoney, garmentUnitPrice, isUnpricedGarment } from "./laundry-defaults";
 import { pricesEnabled } from "./prices";
 import { formatReceiptNumber } from "./receipt-number";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, tint } from "./brand";
@@ -47,7 +47,12 @@ function parseGarmentLines(
 ): MailLine[] {
   return Object.entries(garments || {}).map(([name, val]) => {
     const qty = typeof val === "number" ? val : val.qty;
-    return { name, qty, unitPrice: priceList[name] ?? 0 };
+    return {
+      name,
+      qty,
+      unitPrice: garmentUnitPrice(name, priceList),
+      hidePrice: isUnpricedGarment(name),
+    };
   });
 }
 

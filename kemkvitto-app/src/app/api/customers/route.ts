@@ -2,42 +2,43 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
+import {
+  customerSearchQuery,
+  matchingCustomerEmails,
+  normalizeCustomerEmail,
+} from "@/lib/customer-email";
 
-// Search customers
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ customers: [] });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const washerId = (session.user as { id: string }).id;
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q");
-
-  if (!q || q.length < 2) {
-    return NextResponse.json({ customers: [] });
-  }
+  const query = customerSearchQuery(new URL(request.url).searchParams.get("q"));
+  if (!query) return NextResponse.json({ customers: [] });
 
   const supabase = createServiceClient();
-
   const { data, error } = await supabase
     .from("customers")
-    .select("id, name, phone, email")
+    .select("email, updated_at")
     .eq("washer_id", washerId)
-    .or(`name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
+    .ilike("email", `${query.replace(/[%_]/g, "")}%`)
     .order("updated_at", { ascending: false })
-    .limit(5);
+    .limit(30);
 
   if (error) {
-    // Table might not exist yet — fall back to receipt-based search
     console.error("Customer search error:", error.code, error.message);
-    return NextResponse.json({ customers: [] });
+    return NextResponse.json({ error: "Kunde inte söka kunder" }, { status: 500 });
   }
 
-  return NextResponse.json({ customers: data || [] });
+  const emails = matchingCustomerEmails(
+    (data || []).map((row) => ({ email: row.email, updatedAt: row.updated_at })),
+    query
+  );
+  return NextResponse.json({ customers: emails.map((email) => ({ email })) });
 }
 
-// Upsert customer (create or update)
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -45,34 +46,55 @@ export async function POST(request: Request) {
   }
 
   const washerId = (session.user as { id: string }).id;
-  const { name, phone, email } = await request.json();
-
-  if (!name) {
-    return NextResponse.json({ error: "Name required" }, { status: 400 });
+  const { email } = await request.json();
+  const normalized = normalizeCustomerEmail(email);
+  if (!normalized) {
+    return NextResponse.json({ error: "Email required" }, { status: 400 });
   }
 
   const supabase = createServiceClient();
+  const id = await saveCustomerByEmail(supabase, washerId, normalized);
+  if (!id) return NextResponse.json({ error: "Kunde inte spara kunden" }, { status: 500 });
+  return NextResponse.json({ id }, { status: 200 });
+}
 
-  // Upsert by washer_id + name
-  const { data, error } = await supabase
+export async function saveCustomerByEmail(
+  supabase: ReturnType<typeof createServiceClient>,
+  washerId: string,
+  email: string
+): Promise<string | null> {
+  const normalized = normalizeCustomerEmail(email);
+  if (!normalized) return null;
+  const now = new Date().toISOString();
+  const { data: existing } = await supabase
     .from("customers")
-    .upsert(
-      {
-        washer_id: washerId,
-        name,
-        phone: phone || "",
-        email: email || "",
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "washer_id,name" }
-    )
     .select("id")
-    .single();
+    .eq("washer_id", washerId)
+    .ilike("email", normalized)
+    .limit(1)
+    .maybeSingle();
 
-  if (error) {
-    console.error("Customer upsert error:", error.code, error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (existing?.id) {
+    const { error } = await supabase
+      .from("customers")
+      .update({ email: normalized, updated_at: now })
+      .eq("id", existing.id)
+      .eq("washer_id", washerId);
+    if (error) {
+      console.error("Customer update error:", error.code, error.message);
+      return null;
+    }
+    return existing.id;
   }
 
-  return NextResponse.json({ id: data.id }, { status: 200 });
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({ washer_id: washerId, email: normalized, name: null, phone: null, updated_at: now })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("Customer insert error:", error.code, error.message);
+    return null;
+  }
+  return data.id;
 }
