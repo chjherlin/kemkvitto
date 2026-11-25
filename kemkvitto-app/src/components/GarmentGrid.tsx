@@ -69,7 +69,6 @@ export default function GarmentGrid({
               position: "relative",
               overflow: "visible",
               padding: 0,
-              cursor: "default",
             }}
           >
             <button
@@ -85,7 +84,6 @@ export default function GarmentGrid({
                 justifyContent: "center",
                 background: "none",
                 border: "none",
-                cursor: "pointer",
                 color: "inherit",
                 padding: "1.4rem 0.375rem 0.75rem",
               }}
@@ -117,9 +115,13 @@ export default function GarmentGrid({
                 className="pos-tile-minus"
                 aria-label="−"
                 onClick={() => removeOne(name)}
-                style={{ color: brandColor }}
               >
-                −
+                <span
+                  className="pos-tile-minus-mark"
+                  style={{ backgroundColor: brandColor, color: onBrand(brandColor) }}
+                >
+                  −
+                </span>
               </button>
             )}
           </div>

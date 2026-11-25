@@ -6,6 +6,7 @@ import { sendReceiptEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
 import { buildReceiptInsert } from "@/lib/receipt-insert";
 import { normalizeCustomerEmail } from "@/lib/customer-email";
+import { receiptEmailRejection, shouldSaveCustomer } from "@/lib/email-address";
 import { saveCustomerByEmail } from "@/app/api/customers/route";
 import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 
@@ -26,6 +27,11 @@ export async function POST(request: Request) {
       { error: "Obligatoriska falt saknas" },
       { status: 400 }
     );
+  }
+
+  const emailError = receiptEmailRejection(customerEmail);
+  if (emailError) {
+    return NextResponse.json({ error: emailError.error }, { status: emailError.status });
   }
 
   const supabase = createServiceClient();
@@ -72,32 +78,25 @@ export async function POST(request: Request) {
     .eq("id", washerId);
 
   const normalizedEmail = normalizeCustomerEmail(customerEmail);
-  if (normalizedEmail) {
-    await saveCustomerByEmail(supabase, washerId, normalizedEmail);
+  let emailSent = false;
+  try {
+    const washer = await loadMailWasher(supabase, washerId);
+    const receiptForEmail = {
+      ...data!,
+      customer_email: normalizedEmail,
+      customer_name: customerName || null,
+      customer_phone: customerPhone || null,
+      drop_off_date: dropOffDate || null,
+      services: services ?? [],
+    };
+    await sendReceiptEmail(receiptForEmail, washer);
+    emailSent = true;
+  } catch (err) {
+    console.error("Failed to send receipt email:", err);
   }
 
-  // If customer email provided, send receipt email immediately
-  let emailSent = false;
-  if (customerEmail) {
-    try {
-      const washer = await loadMailWasher(supabase, washerId);
-
-      // Merge in fields that the DB may not have returned (optional columns)
-      const receiptForEmail = {
-        ...data!,
-        customer_email: customerEmail,
-        customer_name: customerName || null,
-        customer_phone: customerPhone || null,
-        drop_off_date: dropOffDate || null,
-        services: services ?? [],
-      };
-
-      await sendReceiptEmail(receiptForEmail, washer);
-      emailSent = true;
-      console.log(`Email sent to ${customerEmail} for receipt #${receiptNumber}`);
-    } catch (err) {
-      console.error("Failed to send receipt email:", err);
-    }
+  if (shouldSaveCustomer(emailSent)) {
+    await saveCustomerByEmail(supabase, washerId, normalizedEmail);
   }
 
   return NextResponse.json({ id: data!.id, emailSent, nextReceiptNumber: storedNext }, { status: 201 });

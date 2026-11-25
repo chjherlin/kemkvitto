@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import EmailSuggestion from "@/components/EmailSuggestion";
 
 interface CustomerHit {
   email: string;
@@ -86,15 +87,18 @@ export default function CustomerSearch({ email, onEmailChange }: CustomerSearchP
           </div>
         )}
       </div>
-      <input
-        type="email"
-        value={email}
-        onChange={(event) => onEmailChange(event.target.value)}
-        placeholder={t("customer.email")}
-        autoComplete="off"
-        className="pos-input"
-        style={{ width: "100%", minHeight: "56px" }}
-      />
+      <div>
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => onEmailChange(event.target.value)}
+          placeholder={t("customer.email")}
+          autoComplete="off"
+          className="pos-input"
+          style={{ width: "100%", minHeight: "56px" }}
+        />
+        <EmailSuggestion value={email} onPick={onEmailChange} />
+      </div>
     </div>
   );
 }

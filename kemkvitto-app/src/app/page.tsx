@@ -19,6 +19,7 @@ import { formatReceiptNumber, parseReceiptCounter } from "@/lib/receipt-number";
 import { DEFAULT_BRAND, brandTheme } from "@/lib/brand";
 import { formatLaundryMoney, garmentUnitPrice } from "@/lib/laundry-defaults";
 import { jost } from "@/lib/fonts";
+import { isValidCustomerEmail, showCreatedReceipt } from "@/lib/email-address";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
@@ -175,10 +176,15 @@ export default function NewReceiptPage() {
         setReceiptNumber(nextReceiptNumber);
         setNumberDraft(formatReceiptNumber(nextReceiptNumber));
       }
+      if (!showCreatedReceipt(Boolean(emailSent))) {
+        setSubmitError(t("order.emailFailed"));
+        setSubmitting(false);
+        return;
+      }
       setSuccessInfo({
         receiptNum: effectiveReceiptNumber,
-        emailSent: Boolean(emailSent),
-        emailAttempted: customerEmail.trim().length > 0,
+        emailSent: true,
+        emailAttempted: true,
         email: customerEmail.trim(),
       });
     } catch (err) {
@@ -247,10 +253,9 @@ export default function NewReceiptPage() {
           </h1>
           <p className="mb-1 text-lg" style={{ color: "var(--text-muted)", overflowWrap: "anywhere" }}>
             #{successInfo.receiptNum}
-            {successInfo.email && ` — ${successInfo.email}`}
           </p>
-          <p className="mb-8 text-base" style={{ color: successInfo.emailSent ? brandColor : "var(--text-light)" }}>
-            {successInfo.emailSent ? t("order.successEmailSent") : t("order.successNoEmail")}
+          <p className="mb-8 text-base font-semibold" style={{ color: "var(--text)", overflowWrap: "anywhere" }}>
+            {t("order.sentTo")} {successInfo.email}
           </p>
           <button
             type="button"
@@ -547,7 +552,7 @@ export default function NewReceiptPage() {
           total={grandTotal}
           brandColor={brandColor}
           submitting={submitting}
-          disabled={submitting || garmentCount === 0 || !deliveryDate}
+          disabled={submitting || garmentCount === 0 || !deliveryDate || !isValidCustomerEmail(customerEmail)}
           customerName={customerEmail}
           customerEmail={customerEmail}
           countryCode={countryCode}

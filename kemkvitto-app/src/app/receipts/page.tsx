@@ -14,6 +14,9 @@ import { formatLaundryMoney, garmentUnitPrice } from "@/lib/laundry-defaults";
 import { DEFAULT_BRAND, INK_DARK, INK_LIGHT, PALETTE, brandTheme, onBrand } from "@/lib/brand";
 import { formatReminderDate, garmentSummary, isPromisedDatePast, utcTodayISO } from "@/lib/reminder-list";
 import { figtree, jost, mono } from "@/lib/fonts";
+import EmailSuggestion from "@/components/EmailSuggestion";
+import { isValidCustomerEmail, reminderControl } from "@/lib/email-address";
+import { normalizeCustomerEmail } from "@/lib/customer-email";
 const SENT_GREEN = brandTheme(PALETTE.find((c) => c.id === "green")!.hex).bar;
 const GREY = PALETTE.find((c) => c.id === "grey")!.hex;
 const QUIET_GREY = brandTheme(GREY).bar;
@@ -71,6 +74,11 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [savedEmail, setSavedEmail] = useState(receipt.customer_email ?? "");
+  const [resending, setResending] = useState(false);
+  const [resendNote, setResendNote] = useState("");
+  const emailChanged = isValidCustomerEmail(customerEmail)
+    && normalizeCustomerEmail(customerEmail) !== normalizeCustomerEmail(savedEmail);
 
   const serviceKeys = ["pressning", "starkning", "vikning", "express"] as const;
   const svcNameMap: Record<string, string> = { pressning: "Pressning", starkning: "Stärkning", vikning: "Vikning", express: "Express" };
@@ -242,11 +250,47 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
             <input
               type="email"
               value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
+              onChange={(e) => { setCustomerEmail(e.target.value); setResendNote(""); }}
               placeholder="E-post"
               className="pos-input"
               style={{ width: "100%" }}
             />
+            <EmailSuggestion value={customerEmail} onPick={setCustomerEmail} />
+            {emailChanged && (
+              <button
+                type="button"
+                disabled={resending}
+                onClick={async () => {
+                  setResending(true);
+                  setResendNote("");
+                  const res = await fetch(`/api/receipts/${receipt.id}/resend`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: customerEmail.trim() }),
+                  });
+                  setResending(false);
+                  if (!res.ok) {
+                    setResendNote(t("order.emailFailed"));
+                    return;
+                  }
+                  const body = await res.json().catch(() => ({}));
+                  setSavedEmail(body.email || customerEmail.trim());
+                  setResendNote(`${t("order.sentTo")} ${body.email || customerEmail.trim()}`);
+                }}
+                style={{
+                  minHeight: "56px",
+                  borderRadius: "0.75rem",
+                  border: "none",
+                  background: brandColor,
+                  color: onBrand(brandColor),
+                  fontWeight: 700,
+                  fontSize: "16px",
+                }}
+              >
+                {resending ? t("order.submitting") : t("receipts.resend")}
+              </button>
+            )}
+            {resendNote && <p style={{ fontSize: "16px" }}>{resendNote}</p>}
           </div>
         </div>
 
@@ -299,8 +343,8 @@ function EditModal({ receipt, brandColor, garmentList, priceList, showPrices, co
                 style={{ flex: 1, padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontWeight: 600 }}>
                 Avbryt
               </button>
-              <button type="button" onClick={handleSave} disabled={saving}
-                style={{ flex: 2, padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving ? "var(--border)" : brandColor, color: saving ? "var(--text-light)" : onBrand(brandColor), cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
+              <button type="button" onClick={handleSave} disabled={saving || !isValidCustomerEmail(customerEmail)}
+                style={{ flex: 2, padding: "0.625rem", borderRadius: "0.5rem", border: "none", backgroundColor: saving || !isValidCustomerEmail(customerEmail) ? "var(--border)" : brandColor, color: saving || !isValidCustomerEmail(customerEmail) ? "var(--text-light)" : onBrand(brandColor), fontWeight: 700 }}>
                 {saving ? "Sparar…" : "Spara ändringar"}
               </button>
             </>
@@ -554,7 +598,7 @@ export default function ReceiptsPage() {
                     >
                       {t("receipts.edit")}
                     </button>
-                    {past && (
+                    {reminderControl(r.customer_email, past) === "button" && (
                       <button
                         type="button"
                         onClick={() => sendReminder(r)}
@@ -566,11 +610,13 @@ export default function ReceiptsPage() {
                           border: `2px solid ${sentAt ? QUIET_GREY : INK_DARK}`,
                           color: sentAt ? QUIET_GREY : INK_DARK,
                           fontWeight: sentAt ? 400 : 700,
-                          cursor: sendingId === r.id ? "default" : "pointer",
                         }}
                       >
                         {sentAt ? t("receipts.sendAgain") : t("receipts.sendReminder")}
                       </button>
+                    )}
+                    {reminderControl(r.customer_email, past) === "note" && (
+                      <p className="text-base" style={{ color: QUIET_GREY, margin: 0 }}>{t("receipts.noEmailReminder")}</p>
                     )}
                   </div>
                 </div>
