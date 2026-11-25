@@ -70,7 +70,7 @@ export default function BottomBar({
             boxShadow: disabled ? "none" : `0 4px 20px ${brandColor}40`,
           }}
         >
-          {submitting ? t("order.submitting") : customerEmail ? t("order.submit") : t("order.submitSave")}
+          {submitting ? t("order.submitting") : t("order.submit")}
         </button>
       </div>
     </div>

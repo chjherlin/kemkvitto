@@ -52,6 +52,9 @@ const translations = {
   "receipts.sendAgain": { sv: "Skicka igen", en: "Send again", da: "Send igen", no: "Send igjen" },
   "receipts.reminderSent": { sv: "Påminnelse skickad", en: "Reminder sent", da: "Påmindelse sendt", no: "Påminnelse sendt" },
   "receipts.reminderFailed": { sv: "Påminnelsen kunde inte skickas.", en: "The reminder could not be sent.", da: "Påmindelsen kunne ikke sendes.", no: "Påminnelsen kunne ikke sendes." },
+  "receipts.noEmailReminder": { sv: "Ingen e-post, ingen påminnelse", en: "No email, no reminder", da: "Ingen e-mail, ingen påmindelse", no: "Ingen e-post, ingen påminnelse" },
+  "receipts.resend": { sv: "Skicka kvittot igen", en: "Send the receipt again", da: "Send kvitteringen igen", no: "Send kvitteringen igjen" },
+  "email.didYouMean": { sv: "Menade du", en: "Did you mean", da: "Mente du", no: "Mente du" },
   "receipts.edit": { sv: "Ändra", en: "Edit", da: "Ret", no: "Endre" },
   "receipts.newReceipt": { sv: "+ Nytt kvitto", en: "+ New receipt", da: "+ Ny kvittering", no: "+ Ny kvittering" },
 
@@ -238,6 +241,8 @@ const translations = {
   "order.submitting": { sv: "Sparar...", en: "Saving...", da: "Gemmer...", no: "Lagrer..." },
   "order.successTitle": { sv: "Kvitto skapat!", en: "Receipt created!", da: "Kvittering oprettet!", no: "Kvittering opprettet!" },
   "order.successEmailSent": { sv: "Kvitto skickat till kund via e-post", en: "Receipt sent to customer via email", da: "Kvittering sendt til kunde via e-mail", no: "Kvittering sendt til kunde via e-post" },
+  "order.sentTo": { sv: "Skickat till", en: "Sent to", da: "Sendt til", no: "Sendt til" },
+  "order.emailFailed": { sv: "Kvittot sparades men mejlet kunde inte skickas.", en: "The receipt was saved but the email could not be sent.", da: "Kvitteringen blev gemt, men e-mailen kunne ikke sendes.", no: "Kvitteringen ble lagret, men e-posten kunne ikke sendes." },
   "order.successNoEmail": { sv: "Kvitto sparat (ingen e-post angiven)", en: "Receipt saved (no email provided)", da: "Kvittering gemt (ingen e-mail angivet)", no: "Kvittering lagret (ingen e-post oppgitt)" },
   "order.newReceipt": { sv: "Nytt kvitto", en: "New receipt", da: "Ny kvittering", no: "Ny kvittering" },
 

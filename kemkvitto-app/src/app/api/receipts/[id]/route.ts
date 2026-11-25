@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase";
 import { sendReceiptEmail, sendDateUpdateEmail } from "@/lib/email";
 import { loadMailWasher } from "@/lib/mail-washer";
+import { receiptEmailRejection } from "@/lib/email-address";
 
 export async function PATCH(
   request: Request,
@@ -31,6 +32,11 @@ export async function PATCH(
 
   const body = await request.json();
   const { garments, services, deliveryDate, customerName, customerEmail, comment, amountTotal } = body;
+
+  const emailError = receiptEmailRejection(customerEmail);
+  if (emailError) {
+    return NextResponse.json({ error: emailError.error }, { status: emailError.status });
+  }
 
   const dateChanged = deliveryDate && deliveryDate !== existing.delivery_date;
 
